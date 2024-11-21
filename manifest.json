@@ -1,0 +1,43 @@
+{
+  "manifest_version": 2,
+  "name": "Modern Bookmarks",
+  "version": "1.0",
+  "description": "Modern bookmark manager with React",
+  "icons": {
+    "48": "icons/bookmark.svg",
+    "96": "icons/bookmark.svg"
+  },
+  "permissions": [
+    "bookmarks",
+    "tabs",
+    "activeTab",
+    "*://duckduckgo.com/*",
+    "*://ac.duckduckgo.com/*"
+  ],
+  "browser_action": {
+    "default_icon": {
+      "48": "icons/bookmark.svg"
+    },
+    "default_popup": "popup.html",
+    "default_title": "Добавить закладку"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "css": ["content-styles.css"]
+    }
+  ],
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_security_policy": "script-src 'self'; object-src 'self'; img-src 'self' https://* data:;",
+  "applications": {
+    "gecko": {
+      "id": "modern-bookmarks@example.com"
+    }
+  }
+}
