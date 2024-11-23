@@ -42,18 +42,26 @@ function App() {
             }
         };
 
+        // Объединяем обработчики в один
+        const handleBookmarkChanges = () => {
+            loadBookmarks();
+        };
+
+        // Начальная загрузка
         loadBookmarks();
 
-        browser.bookmarks.onCreated.addListener(loadBookmarks);
-        browser.bookmarks.onRemoved.addListener(loadBookmarks);
-        browser.bookmarks.onChanged.addListener(loadBookmarks);
-        browser.bookmarks.onMoved.addListener(loadBookmarks);
+        // Подписываемся на события
+        browser.bookmarks.onCreated.addListener(handleBookmarkChanges);
+        browser.bookmarks.onRemoved.addListener(handleBookmarkChanges);
+        browser.bookmarks.onChanged.addListener(handleBookmarkChanges);
+        browser.bookmarks.onMoved.addListener(handleBookmarkChanges);
 
+        // Отписываемся от событий
         return () => {
-            browser.bookmarks.onCreated.removeListener(loadBookmarks);
-            browser.bookmarks.onRemoved.removeListener(loadBookmarks);
-            browser.bookmarks.onChanged.removeListener(loadBookmarks);
-            browser.bookmarks.onMoved.removeListener(loadBookmarks);
+            browser.bookmarks.onCreated.removeListener(handleBookmarkChanges);
+            browser.bookmarks.onRemoved.removeListener(handleBookmarkChanges);
+            browser.bookmarks.onChanged.removeListener(handleBookmarkChanges);
+            browser.bookmarks.onMoved.removeListener(handleBookmarkChanges);
         };
     }, []);
 
@@ -70,6 +78,37 @@ function App() {
             addToFavorites(bookmark);
         }
     };
+
+    const handleBookmarkUpdate = async () => {
+        try {
+            const tree = await browser.bookmarks.getTree();
+            const toolbar = tree[0]?.children?.find(child => child.id === "toolbar_____");
+            if (toolbar?.children) {
+                // Сначала сортируем
+                const sortedChildren = [...toolbar.children].sort((a, b) => {
+                    if ((!a.url && b.url) || (a.url && !b.url)) {
+                        return a.url ? 1 : -1;
+                    }
+                    return a.title.localeCompare(b.title);
+                });
+
+                // Создаем новый объект toolbar с отсортированными детьми
+                const newToolbar = {...toolbar, children: sortedChildren};
+
+                // Создаем новое дерево с обновленным toolbar
+                const newTree = {...tree[0], children: [newToolbar]};
+
+                // Устанавливаем новое состояние
+                setBookmarks([newTree]);
+
+                // Возвращаем обновленные данные
+                return newToolbar;
+            }
+        } catch (error) {
+            console.error('Error updating bookmarks:', error);
+        }
+    };
+
 
     return (<div className="min-h-screen bg-[#1C1B22]"> {/* Изменен на более темный цвет как панель закладок */}
         <button
@@ -99,7 +138,7 @@ function App() {
                     <div className="flex items-center justify-between mb-8">
                         <SearchBar/>
                         <div className="flex items-center gap-4">
-                             <ServicesMenu />
+                            <ServicesMenu/>
                         </div>
                     </div>
 
@@ -109,12 +148,16 @@ function App() {
                     />
 
                     <div className="space-y-6" ref={mainContentRef}>
-                        {bookmarks[0]?.children?.map((rootFolder) => (<BookmarkFolder
-                            key={rootFolder.id}
-                            node={rootFolder}
-                            isFavorite={isFavorite}
-                            onToggleFavorite={handleToggleFavorite}
-                        />))}
+                        {bookmarks[0]?.children?.map((rootFolder) => (
+                            <BookmarkFolder
+                                key={rootFolder.id}
+                                node={rootFolder}
+                                isFavorite={isFavorite}
+                                onToggleFavorite={handleToggleFavorite}
+                                bookmarks={bookmarks[0]} // Передаем корневой узел
+                                onUpdate={handleBookmarkUpdate} // Добавляем обработчик
+                            />
+                        ))}
                     </div>
                 </div>
             </div>

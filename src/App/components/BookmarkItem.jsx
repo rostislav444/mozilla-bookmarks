@@ -1,8 +1,16 @@
-import {Link, Star, StarOff} from 'lucide-react';
+import {Link, Star, StarOff, Pencil} from 'lucide-react';
 import {useState, useEffect} from 'react';
+import BookmarkEditModal from './BookmarkEditModal';
 
-export const BookmarkItem = ({ bookmark, isFavorite, onToggleFavorite }) => {
+export const BookmarkItem = ({
+                                 bookmark,
+                                 isFavorite,
+                                 onToggleFavorite,
+                                 bookmarks,
+                                 onUpdate  // Добавляем в пропсы
+                             }) => {
     const [faviconUrl, setFaviconUrl] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     if (!bookmark?.url) return null;
 
@@ -15,21 +23,48 @@ export const BookmarkItem = ({ bookmark, isFavorite, onToggleFavorite }) => {
         getFavicon();
     }, [hostname]);
 
+    useEffect(() => {
+        const checkBookmark = async () => {
+            try {
+                await browser.bookmarks.get(bookmark.id);
+            } catch (error) {
+                // Если закладка не найдена, вызываем обновление
+                onUpdate();
+            }
+        };
+        checkBookmark();
+    }, [bookmark.id]);
+
+    if (!bookmark?.url) return null;
+
     return (
         <div className="relative group h-[180px]">
-            <button
-                onClick={(e) => {
-                    e.preventDefault();
-                    onToggleFavorite(bookmark);
-                }}
-                className="absolute top-2 right-2 p-2 bg-[#2B2A33] rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
-            >
-                {isFavorite(bookmark.id) ? (
-                    <Star className="w-4 h-4 text-yellow-400"/>
-                ) : (
-                    <StarOff className="w-4 h-4 text-gray-400"/>
-                )}
-            </button>
+            <div
+                className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        onToggleFavorite(bookmark);
+                    }}
+                    className="p-2 bg-[#2B2A33] rounded-md hover:bg-[#42414D] transition-colors"
+                >
+                    {isFavorite(bookmark.id) ? (
+                        <Star className="w-4 h-4 text-yellow-400"/>
+                    ) : (
+                        <StarOff className="w-4 h-4 text-gray-400"/>
+                    )}
+                </button>
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setIsEditModalOpen(true);
+                    }}
+                    className="p-2 bg-[#2B2A33] rounded-md hover:bg-[#42414D] transition-colors"
+                >
+                    <Pencil className="w-4 h-4 text-gray-400"/>
+                </button>
+            </div>
+
             <a
                 href={bookmark.url}
                 className="block bg-[#2B2A33] p-4 rounded-lg hover:bg-[#52525E] transition-all duration-300 flex flex-col h-full hover:shadow-lg hover:shadow-blue-500/10"
@@ -49,7 +84,7 @@ export const BookmarkItem = ({ bookmark, isFavorite, onToggleFavorite }) => {
                         ) : null}
                         <Link
                             className="w-4 h-4 text-blue-400"
-                            style={{ display: faviconUrl ? 'none' : 'block' }}
+                            style={{display: faviconUrl ? 'none' : 'block'}}
                         />
                     </div>
                     <div className="flex items-center gap-2">
@@ -65,6 +100,15 @@ export const BookmarkItem = ({ bookmark, isFavorite, onToggleFavorite }) => {
                     {bookmark.url}
                 </p>
             </a>
+
+            {isEditModalOpen && (
+                <BookmarkEditModal
+                    bookmark={bookmark}
+                    folders={bookmarks}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onUpdate={onUpdate}  // Теперь onUpdate определен
+                />
+            )}
         </div>
     );
 };

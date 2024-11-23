@@ -6,7 +6,14 @@ const ROWS_TO_SHOW = 3;
 const FOLDER_WIDTH = 110;
 const FOLDER_GAP = 8;
 
-export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) => {
+export const BookmarkFolder = ({
+                                   node,
+                                   depth = 0,
+                                   isFavorite,
+                                   onToggleFavorite,
+                                   bookmarks,
+                                   onUpdate
+                               }) => {
     const [currentPath, setCurrentPath] = useState([node]);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
@@ -15,9 +22,46 @@ export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) 
 
     if (!node) return null;
 
+    // Добавляем эффект для обновления текущего пути при изменении закладок
+    useEffect(() => {
+        const updateCurrentPath = async () => {
+            try {
+                // Получаем актуальные данные для каждой папки в пути
+                const updatedPath = await Promise.all(
+                    currentPath.map(async (folder) => {
+                        const updatedFolder = await browser.bookmarks.getSubTree(folder.id);
+                        return updatedFolder[0];
+                    })
+                );
+                setCurrentPath(updatedPath);
+            } catch (error) {
+                console.error('Error updating current path:', error);
+            }
+        };
+
+        const handleBookmarkChanges = () => {
+            updateCurrentPath();
+        };
+
+        // Подписываемся на события изменений закладок
+        browser.bookmarks.onCreated.addListener(handleBookmarkChanges);
+        browser.bookmarks.onRemoved.addListener(handleBookmarkChanges);
+        browser.bookmarks.onChanged.addListener(handleBookmarkChanges);
+        browser.bookmarks.onMoved.addListener(handleBookmarkChanges);
+
+        return () => {
+            // Отписываемся от событий при размонтировании
+            browser.bookmarks.onCreated.removeListener(handleBookmarkChanges);
+            browser.bookmarks.onRemoved.removeListener(handleBookmarkChanges);
+            browser.bookmarks.onChanged.removeListener(handleBookmarkChanges);
+            browser.bookmarks.onMoved.removeListener(handleBookmarkChanges);
+        };
+    }, [currentPath]);
+
     const currentFolder = currentPath[currentPath.length - 1];
     const childrenArray = currentFolder.children || [];
 
+    // Остальной код компонента остается без изменений...
     const calculateFoldersPerPage = () => {
         if (containerRef.current) {
             const containerWidth = containerRef.current.offsetWidth - 72;
@@ -25,7 +69,7 @@ export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) 
             const newFoldersPerPage = foldersPerRow * ROWS_TO_SHOW
             if (newFoldersPerPage !== foldersPerPage) {
                 setFoldersPerPage(newFoldersPerPage);
-                setCurrentPage(prev => Math.min(prev, Math.ceil(folders.length / newFoldersPerPage)));
+                setCurrentPage(prev => Math.min(prev, Math.ceil(filteredFolders.length / newFoldersPerPage)));
             }
         }
     };
@@ -79,13 +123,13 @@ export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) 
         return searchInFolder(currentFolder, searchQuery);
     }, [currentFolder, searchQuery]);
 
-    const folders = filteredItems.folders;
-    const bookmarks = filteredItems.bookmarks;
+    const filteredFolders = filteredItems.folders;
+    const filteredBookmarks = filteredItems.bookmarks;
 
-    const totalPages = Math.ceil(folders.length / foldersPerPage);
+    const totalPages = Math.ceil(filteredFolders.length / foldersPerPage);
     const startIndex = (currentPage - 1) * foldersPerPage;
     const endIndex = startIndex + foldersPerPage;
-    const currentFolders = folders.slice(startIndex, endIndex);
+    const currentFolders = filteredFolders.slice(startIndex, endIndex);
 
     const handleFolderClick = (folder) => {
         const folderIndex = currentPath.findIndex(item => item.id === folder.id);
@@ -109,7 +153,7 @@ export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) 
                                 index === currentPath.length - 1 ? 'text-white font-medium' : 'text-gray-400'
                             }`}
                         >
-                            <h3 className="text-lg font-semibold text-white"> {folder.title}</h3>
+                            <h3 className="text-lg font-semibold text-white">{folder.title}</h3>
                         </button>
                         {index < currentPath.length - 1 && (
                             <ChevronRight className="w-5 h-5 mt-1 ml-2 mr-2 text-gray-600 mx-1"/>
@@ -121,7 +165,7 @@ export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) 
     };
 
     const renderFolders = () => {
-        if (folders.length === 0) return null;
+        if (filteredFolders.length === 0) return null;
 
         return (
             <div className="mb-6" ref={containerRef}>
@@ -146,16 +190,30 @@ export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) 
     };
 
     const renderBookmarks = () => {
-        if (bookmarks.length === 0) return null;
+        if (filteredBookmarks.length === 0) return null;
+
+        const handleUpdate = async () => {
+            await onUpdate();
+            // Обновляем текущий путь после обновления общего состояния
+            const updatedPath = await Promise.all(
+                currentPath.map(async (folder) => {
+                    const updatedFolder = await browser.bookmarks.getSubTree(folder.id);
+                    return updatedFolder[0];
+                })
+            );
+            setCurrentPath(updatedPath);
+        };
 
         return (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-4">
-                {bookmarks.map((bookmark) => (
+                {filteredBookmarks.map((bookmark) => (
                     <BookmarkItem
                         key={bookmark.id}
                         bookmark={bookmark}
                         isFavorite={isFavorite}
                         onToggleFavorite={onToggleFavorite}
+                        bookmarks={bookmarks}
+                        onUpdate={handleUpdate}
                     />
                 ))}
             </div>
@@ -206,7 +264,7 @@ export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) 
                     <div className="flex items-center flex-1">
                         {renderBreadcrumbs()}
                     </div>
-                    {folders.length > foldersPerPage && !searchQuery && renderPagination()}
+                    {filteredFolders.length > foldersPerPage && !searchQuery && renderPagination()}
                 </div>
             </div>
 
@@ -223,16 +281,16 @@ export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) 
                 </div>
             </div>
 
-            {searchQuery && (folders.length === 0 && bookmarks.length === 0) ? (
+            {searchQuery && (filteredFolders.length === 0 && filteredBookmarks.length === 0) ? (
                 <div className="text-gray-400 text-sm">
                     Ничего не найдено по запросу "{searchQuery}"
                 </div>
             ) : (
                 <>
-                    {folders.length > 0 && (
+                    {filteredFolders.length > 0 && (
                         <>
                             {renderFolders()}
-                            {bookmarks.length > 0 && (
+                            {filteredBookmarks.length > 0 && (
                                 <div className="h-px bg-gray-700/50 mb-6"/>
                             )}
                         </>
