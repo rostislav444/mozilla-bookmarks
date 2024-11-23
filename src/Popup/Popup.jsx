@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {FolderSelect} from './components/FolderSelect';
 import {BookmarkForm} from './components/BookmarkForm';
-import './styles/popup.css';
+import './styles.css';
 
 const Popup = () => {
     const [currentTab, setCurrentTab] = useState(null);

@@ -25,8 +25,8 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["extension/content-script.js"],
-      "css": ["extension/content-styles.css"],
+      "js": ["extension/content-script-sidebar.js"],
+      "css": ["extension/content-styles-bookmarks.css"],
       "run_at": "document_start"
     }
   ],
@@ -37,7 +37,10 @@
     "homepage": "index.html"
   },
   "background": {
-    "scripts": ["extension/background.js"]
+    "scripts": [
+      "extension/background-bookmarks.js",
+      "extension/background-sidebar.js"
+    ]
   },
   "content_security_policy": "script-src 'self'; object-src 'self'; img-src 'self' https://* data:;",
   "applications": {

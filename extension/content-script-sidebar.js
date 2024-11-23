@@ -17,7 +17,7 @@ function createSidebarUI() {
         </div>
     `;
     document.body.appendChild(container);
-    
+
     // Получаем закладки через background script
     browser.runtime.sendMessage({ type: 'GET_BOOKMARKS' })
         .then(response => {
@@ -60,14 +60,14 @@ function renderBookmarks(bookmarks) {
 // Инициализация сайдбара
 function initSidebar() {
     if (document.getElementById('bookmark-ext-container')) return;
-    
+
     createSidebarUI();
-    
+
     let isOpen = false;
     const trigger = document.getElementById('bookmark-ext-trigger');
     const content = document.getElementById('bookmark-ext-content');
     const container = document.getElementById('bookmark-ext-container');
-    
+
     if (trigger && content && container) {
         trigger.addEventListener('mouseenter', () => {
             if (!isOpen) {
@@ -75,7 +75,7 @@ function initSidebar() {
                 isOpen = true;
             }
         });
-        
+
         container.addEventListener('mouseleave', (e) => {
             const rect = container.getBoundingClientRect();
             if (e.clientX > rect.right || e.clientX < rect.left) {
