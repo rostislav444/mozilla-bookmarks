@@ -1,24 +1,90 @@
 import {BookmarkItem} from "@components/BookmarkItem.jsx";
-import {useState} from "react";
-import {ChevronRight, Folder, ChevronLeft} from 'lucide-react';
+import {useState, useMemo, useEffect, useRef} from "react";
+import {ChevronRight, Folder, ChevronLeft, Search} from 'lucide-react';
 
-const FOLDERS_PER_PAGE = 18;
+const ROWS_TO_SHOW = 3;
+const FOLDER_WIDTH = 110;
+const FOLDER_GAP = 8;
 
-export const BookmarkFolder = ({ node, depth = 0, isFavorite, onToggleFavorite }) => {
+export const BookmarkFolder = ({node, depth = 0, isFavorite, onToggleFavorite}) => {
     const [currentPath, setCurrentPath] = useState([node]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [foldersPerPage, setFoldersPerPage] = useState(24);
+    const containerRef = useRef(null);
 
     if (!node) return null;
 
     const currentFolder = currentPath[currentPath.length - 1];
     const childrenArray = currentFolder.children || [];
-    const folders = childrenArray.filter(child => !child.url);
-    const bookmarks = childrenArray.filter(child => child.url);
 
-    // Pagination calculations
-    const totalPages = Math.ceil(folders.length / FOLDERS_PER_PAGE);
-    const startIndex = (currentPage - 1) * FOLDERS_PER_PAGE;
-    const endIndex = startIndex + FOLDERS_PER_PAGE;
+    const calculateFoldersPerPage = () => {
+        if (containerRef.current) {
+            const containerWidth = containerRef.current.offsetWidth - 72;
+            const foldersPerRow = Math.floor(containerWidth / (FOLDER_WIDTH + FOLDER_GAP));
+            const newFoldersPerPage = foldersPerRow * ROWS_TO_SHOW
+            if (newFoldersPerPage !== foldersPerPage) {
+                setFoldersPerPage(newFoldersPerPage);
+                setCurrentPage(prev => Math.min(prev, Math.ceil(folders.length / newFoldersPerPage)));
+            }
+        }
+    };
+
+    useEffect(() => {
+        calculateFoldersPerPage();
+        const handleResize = () => {
+            calculateFoldersPerPage();
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const searchInFolder = (folder, query) => {
+        const results = {
+            folders: [],
+            bookmarks: []
+        };
+
+        if (folder.title.toLowerCase().includes(query.toLowerCase())) {
+            results.folders.push(folder);
+        }
+
+        (folder.children || []).forEach(child => {
+            if (child.url) {
+                if (
+                    child.title.toLowerCase().includes(query.toLowerCase()) ||
+                    child.url.toLowerCase().includes(query.toLowerCase())
+                ) {
+                    results.bookmarks.push(child);
+                }
+            } else {
+                const childResults = searchInFolder(child, query);
+                results.folders.push(...childResults.folders);
+                results.bookmarks.push(...childResults.bookmarks);
+            }
+        });
+
+        return results;
+    };
+
+    const filteredItems = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return {
+                folders: childrenArray.filter(child => !child.url),
+                bookmarks: childrenArray.filter(child => child.url)
+            };
+        }
+
+        return searchInFolder(currentFolder, searchQuery);
+    }, [currentFolder, searchQuery]);
+
+    const folders = filteredItems.folders;
+    const bookmarks = filteredItems.bookmarks;
+
+    const totalPages = Math.ceil(folders.length / foldersPerPage);
+    const startIndex = (currentPage - 1) * foldersPerPage;
+    const endIndex = startIndex + foldersPerPage;
     const currentFolders = folders.slice(startIndex, endIndex);
 
     const handleFolderClick = (folder) => {
@@ -29,6 +95,7 @@ export const BookmarkFolder = ({ node, depth = 0, isFavorite, onToggleFavorite }
             setCurrentPath([...currentPath, folder]);
         }
         setCurrentPage(1);
+        setSearchQuery('');
     };
 
     const renderBreadcrumbs = () => {
@@ -57,18 +124,18 @@ export const BookmarkFolder = ({ node, depth = 0, isFavorite, onToggleFavorite }
         if (folders.length === 0) return null;
 
         return (
-            <div className="mb-6">
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
+            <div className="mb-6" ref={containerRef}>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))]  gap-4">
                     {currentFolders.map((folder) => (
                         <button
                             key={folder.id}
                             onClick={() => handleFolderClick(folder)}
-                            className="flex bg-[#42414D20] flex-col items-center group hover:bg-[#52525E] p-2 rounded-lg transition-colors"
+                            className="flex bg-[#42414D20] flex-col items-center group hover:bg-[#52525E] p-4 rounded-md transition-colors min-h-[112px]"
                         >
-                            <div className="w-20 h-20 rounded-lg flex items-center justify-center mb-2">
-                                <Folder className="w-12 h-12 text-[#42414D] group-hover:text-purple-400"/>
+                            <div className="w-20 rounded-md flex items-center justify-center mb-2">
+                                <Folder className="w-10 h-10 text-[#42414D] group-hover:text-purple-400"/>
                             </div>
-                            <span className="text-md text-gray-300 text-center line-clamp-2">
+                            <span className="text-[13px] text-gray-300 text-center line-clamp-2">
                                 {folder.title}
                             </span>
                         </button>
@@ -82,7 +149,7 @@ export const BookmarkFolder = ({ node, depth = 0, isFavorite, onToggleFavorite }
         if (bookmarks.length === 0) return null;
 
         return (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 mb-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-4">
                 {bookmarks.map((bookmark) => (
                     <BookmarkItem
                         key={bookmark.id}
@@ -104,12 +171,12 @@ export const BookmarkFolder = ({ node, depth = 0, isFavorite, onToggleFavorite }
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
                     className={`p-1 rounded-md transition-colors ${
-                        currentPage === 1 
-                            ? 'text-gray-600' 
+                        currentPage === 1
+                            ? 'text-gray-600'
                             : 'text-gray-400 hover:bg-[#42414D] hover:text-white'
                     }`}
                 >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-4 h-4"/>
                 </button>
                 <span className="text-sm text-gray-400">
                     {currentPage}/{totalPages}
@@ -118,12 +185,12 @@ export const BookmarkFolder = ({ node, depth = 0, isFavorite, onToggleFavorite }
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
                     className={`p-1 rounded-md transition-colors ${
-                        currentPage === totalPages 
-                            ? 'text-gray-600' 
+                        currentPage === totalPages
+                            ? 'text-gray-600'
                             : 'text-gray-400 hover:bg-[#42414D] hover:text-white'
                     }`}
                 >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4"/>
                 </button>
             </div>
         );
@@ -131,25 +198,48 @@ export const BookmarkFolder = ({ node, depth = 0, isFavorite, onToggleFavorite }
 
     return (
         <div id={`folder-${node.id}`} className="w-full mt-12">
-            <div className="flex items-center gap-2 mb-8">
+            <div className="flex items-center gap-2 mb-6">
                 <div className="p-1.5 bg-purple-500/10 rounded-md mr-3">
                     <Folder className="w-5 h-5 text-purple-400"/>
                 </div>
                 <div className="flex justify-between items-center flex-1">
-                    {renderBreadcrumbs()}
-                    {folders.length > FOLDERS_PER_PAGE && renderPagination()}
+                    <div className="flex items-center flex-1">
+                        {renderBreadcrumbs()}
+                    </div>
+                    {folders.length > foldersPerPage && !searchQuery && renderPagination()}
                 </div>
             </div>
 
-            {folders.length > 0 && (
+            <div className='flex w-full justify-start'>
+                <div className="relative mb-8">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder=""
+                        className="h-9 px-3 pl-9 bg-[#2B2A33] min-w-96 text-white placeholder-gray-400 focus:outline-none rounded-md border-none text-sm"
+                    />
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"/>
+                </div>
+            </div>
+
+            {searchQuery && (folders.length === 0 && bookmarks.length === 0) ? (
+                <div className="text-gray-400 text-sm">
+                    Ничего не найдено по запросу "{searchQuery}"
+                </div>
+            ) : (
                 <>
-                    {renderFolders()}
-                    {bookmarks.length > 0 && (
-                        <div className="h-px bg-gray-700/50 mb-6"/>
+                    {folders.length > 0 && (
+                        <>
+                            {renderFolders()}
+                            {bookmarks.length > 0 && (
+                                <div className="h-px bg-gray-700/50 mb-6"/>
+                            )}
+                        </>
                     )}
+                    {renderBookmarks()}
                 </>
             )}
-            {renderBookmarks()}
         </div>
     );
 };
