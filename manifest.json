@@ -8,6 +8,7 @@
     "96": "icons/bookmark.svg"
   },
   "permissions": [
+    "storage",
     "bookmarks",
     "tabs",
     "activeTab",
@@ -24,9 +25,15 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["extension/content-script-sidebar.js"],
-      "css": ["extension/content-styles-bookmarks.css"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "extension/content-script-sidebar.js"
+      ],
+      "css": [
+        "extension/content-styles-bookmarks.css"
+      ],
       "run_at": "document_start"
     }
   ],
@@ -47,5 +54,9 @@
     "gecko": {
       "id": "modern-bookmarks@example.com"
     }
-  }
+  },
+  "web_accessible_resources": [
+    "assets/*",
+    "icons/*"
+  ]
 }

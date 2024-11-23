@@ -1,128 +1,238 @@
-import React, { useState, useEffect } from 'react';
-import { createRoot } from 'react-dom/client';
-import { ChevronRight, ChevronDown, Bookmark, Folder } from 'lucide-react';
-import './sidebar.css';
+import React, {useEffect, useState} from 'react';
+import {ChevronDown, ChevronRight, Folder, Search, Star, X} from 'lucide-react';
+import {BookmarkItem} from './BookmarkItem';
+import {QuickLinkItem} from './QuickLinkItem';
 
-// Компонент для отдельной папки или закладки
-const BookmarkItem = ({ item, level = 0 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const matchesSearch = (node, searchQuery) => {
+    if (!searchQuery) return true;
 
-  if (item.children) {
-    return (
-      <div className="folder-item">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`
-            flex items-center w-full p-2 hover:bg-gray-700/50 rounded-lg 
-            transition-colors gap-2 ${level > 0 ? 'ml-4' : ''}
-          `}
-        >
-          {isOpen ? (
-            <ChevronDown className="w-4 h-4 text-gray-400" />
-          ) : (
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          )}
-          <Folder className="w-4 h-4 text-gray-400" />
-          <span className="text-sm font-medium truncate">{item.title}</span>
-        </button>
-        {isOpen && (
-          <div className="space-y-1">
-            {item.children.map((child, index) => (
-              <BookmarkItem
-                key={child.id || index}
-                item={child}
-                level={level + 1}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+    const query = searchQuery.toLowerCase();
+    const titleMatch = node.title?.toLowerCase().includes(query);
+    const urlMatch = node.url?.toLowerCase().includes(query);
 
-  return (
-    <a
-      href={item.url}
-      className={`
-        flex items-center p-2 hover:bg-gray-700/50 rounded-lg 
-        transition-colors gap-2 ${level > 0 ? 'ml-4' : ''}
-      `}
-    >
-      <Bookmark className="w-4 h-4 text-gray-400" />
-      <span className="text-sm truncate">{item.title}</span>
-    </a>
-  );
-};
+    if (titleMatch || urlMatch) return true;
 
-// Основной компонент сайдбара
-const Sidebar = () => {
-  const [bookmarks, setBookmarks] = useState([]);
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    loadBookmarks();
-
-    // Подписываемся на изменения закладок
-    browser.bookmarks.onCreated.addListener(loadBookmarks);
-    browser.bookmarks.onRemoved.addListener(loadBookmarks);
-    browser.bookmarks.onChanged.addListener(loadBookmarks);
-    browser.bookmarks.onMoved.addListener(loadBookmarks);
-
-    return () => {
-      // Отписываемся при размонтировании
-      browser.bookmarks.onCreated.removeListener(loadBookmarks);
-      browser.bookmarks.onRemoved.removeListener(loadBookmarks);
-      browser.bookmarks.onChanged.removeListener(loadBookmarks);
-      browser.bookmarks.onMoved.removeListener(loadBookmarks);
-    };
-  }, []);
-
-  const loadBookmarks = async () => {
-    try {
-      const bookmarkTree = await browser.bookmarks.getTree();
-      setBookmarks(bookmarkTree[0].children || []);
-    } catch (error) {
-      console.error('Error loading bookmarks:', error);
+    // Проверяем детей
+    if (node.children) {
+        return node.children.some(child => matchesSearch(child, query));
     }
-  };
 
-  return (
-    <>
-      {/* Триггер для открытия */}
-      <div
-        className="sidebar-trigger"
-        onMouseEnter={() => setIsOpen(true)}
-      />
-
-      {/* Основной контейнер сайдбара */}
-      <div
-        className={`
-          fixed top-0 left-0 h-full w-64 bg-gray-900 shadow-xl 
-          transform transition-transform duration-300 ease-out
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}
-        onMouseLeave={() => setIsOpen(false)}
-      >
-        {/* Заголовок */}
-        <div className="p-4 border-b border-gray-800">
-          <h3 className="text-lg font-semibold">Закладки</h3>
-        </div>
-
-        {/* Список закладок */}
-        <div className="overflow-y-auto h-[calc(100%-60px)] p-2 space-y-1">
-          {bookmarks.map((item, index) => (
-            <BookmarkItem
-              key={item.id || index}
-              item={item}
-            />
-          ))}
-        </div>
-      </div>
-    </>
-  );
+    return false;
 };
 
-// Инициализация React приложения
-createRoot(document.getElementById('sidebar-root')).render(<Sidebar />);
+const TreeNode = ({node, level = 0, openFolders, setOpenFolders, searchQuery}) => {
+    const isOpen = openFolders.has(node.id);
+    const matches = matchesSearch(node, searchQuery);
 
-export default Sidebar;
+    if (!matches) return null;
+
+    const handleToggle = () => {
+        const newOpenFolders = new Set(openFolders);
+        if (isOpen) {
+            newOpenFolders.delete(node.id);
+        } else {
+            newOpenFolders.add(node.id);
+        }
+        setOpenFolders(newOpenFolders);
+    };
+
+    const isFolder = (item) => {
+        return item.type === 'folder' || !item.url;
+    };
+
+    const sortedChildren = React.useMemo(() => {
+        if (!node.children) return [];
+
+        const folders = node.children.filter(isFolder);
+        const bookmarks = node.children.filter(item => !isFolder(item));
+
+        const sortedFolders = folders.sort((a, b) => a.title.localeCompare(b.title));
+        const sortedBookmarks = bookmarks.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+
+        return [...sortedFolders, ...sortedBookmarks];
+    }, [node.children]);
+
+    if (!isFolder(node)) {
+        return (
+            <a
+                href={node.url}
+                onClick={(e) => {
+                    e.preventDefault();
+                    window.parent.location.href = node.url;
+                }}
+                className="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-700/50 rounded-md ml-6 text-[13px] text-gray-300 hover:text-white transition-colors"
+            >
+                <BookmarkItem url={node.url}/>
+                <span className="truncate">{node.title}</span>
+            </a>
+        );
+    }
+
+    // Если это папка и в ней нет соответствующих поиску элементов, не показываем её
+    if (searchQuery && !node.children?.some(child => matchesSearch(child, searchQuery))) {
+        return null;
+    }
+
+    return (
+        <div>
+            <button
+                onClick={handleToggle}
+                className={`
+                    flex items-center w-full gap-1.5 py-1.5 px-2 hover:bg-gray-700/50 rounded-md
+                    ${level > 0 ? 'ml-4' : ''} transition-colors
+                `}
+            >
+                {isOpen ? (
+                    <ChevronDown className="w-4 h-4 text-gray-400"/>
+                ) : (
+                    <ChevronRight className="w-4 h-4 text-gray-400"/>
+                )}
+                <Folder className="w-4 h-4 text-gray-400"/>
+                <span className="text-sm text-gray-300 truncate font-medium">{node.title}</span>
+            </button>
+            {isOpen && sortedChildren.length > 0 && (
+                <div className="ml-2">
+                    {sortedChildren.map((child) => (
+                        <TreeNode
+                            key={child.id}
+                            node={child}
+                            level={level + 1}
+                            openFolders={openFolders}
+                            setOpenFolders={setOpenFolders}
+                            searchQuery={searchQuery}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export const Sidebar = () => {
+    const [bookmarks, setBookmarks] = useState([]);
+    const [favorites, setFavorites] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [openFolders, setOpenFolders] = useState(new Set());
+
+    useEffect(() => {
+        loadBookmarks();
+        loadFavorites();
+
+        window.addEventListener('BOOKMARKS_UPDATED', loadBookmarks);
+        return () => {
+            window.removeEventListener('BOOKMARKS_UPDATED', loadBookmarks);
+        };
+    }, []);
+
+
+    // При поиске автоматически открываем папки, содержащие результаты
+    useEffect(() => {
+        if (searchQuery) {
+            const newOpenFolders = new Set(openFolders);
+            const addMatchingFolders = (nodes) => {
+                nodes.forEach(node => {
+                    if (node.children) {
+                        if (node.children.some(child => matchesSearch(child, searchQuery))) {
+                            newOpenFolders.add(node.id);
+                        }
+                        addMatchingFolders(node.children);
+                    }
+                });
+            };
+            addMatchingFolders(bookmarks);
+            setOpenFolders(newOpenFolders);
+        } else {
+            // Когда поисковый запрос пустой, закрываем все папки
+            setOpenFolders(new Set());
+        }
+    }, [searchQuery, bookmarks]); // добавил bookmarks в зависимости
+
+    const loadBookmarks = async () => {
+        try {
+            const response = await browser.runtime.sendMessage({type: 'GET_BOOKMARKS'});
+            if (response?.bookmarks) {
+                const toolbarFolder = response.bookmarks[0]?.children?.find(
+                    child => child.title === "Панель закладок" || child.id === "toolbar_____"
+                );
+
+                if (toolbarFolder?.children) {
+                    const folders = toolbarFolder.children.filter(item => item.type === 'folder' || !item.url);
+                    const bookmarks = toolbarFolder.children.filter(item => item.type !== 'folder' && item.url);
+
+                    const sortedFolders = folders.sort((a, b) => a.title.localeCompare(b.title));
+                    const sortedBookmarks = bookmarks.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+
+                    setBookmarks([...sortedFolders, ...sortedBookmarks]);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading bookmarks:', error);
+        }
+    };
+
+    const loadFavorites = () => {
+        const savedFavorites = localStorage.getItem('quickLinks');
+        if (savedFavorites) {
+            setFavorites(JSON.parse(savedFavorites));
+        }
+    };
+
+    return (
+        <div
+            className="h-full bg-[#1C1B22] text-white w-[400px] overflow-y-auto [&::-webkit-scrollbar-track]:bg-transparent">
+            <div className="p-4 border-b border-gray-800">
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Поиск закладок..."
+                        className="w-full bg-gray-800 rounded-md pl-9 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    {searchQuery ? (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2"
+                        >
+                            <X className="w-4 h-4 text-gray-400"/>
+                        </button>
+                    ) : (
+                        <Search className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2"/>
+                    )}
+                </div>
+            </div>
+
+            <div className="overflow-y-auto h-[calc(100%-60px)]">
+                {favorites.length > 0 && (
+                    <div className="p-4 border-b border-gray-800">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Star className="w-4 h-4 text-yellow-400"/>
+                            <h3 className="text-sm font-medium text-white">Быстрые ссылки</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {favorites.map((link) => (
+                                <QuickLinkItem key={link.id} link={link}/>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Folder className="w-4 h-4 text-purple-400"/>
+                        <h3 className="text-sm font-medium text-white">Панель закладок</h3>
+                    </div>
+                    {bookmarks.map((bookmark) => (
+                        <TreeNode
+                            key={bookmark.id}
+                            node={bookmark}
+                            openFolders={openFolders}
+                            setOpenFolders={setOpenFolders}
+                            searchQuery={searchQuery}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};

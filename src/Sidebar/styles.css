@@ -4,58 +4,19 @@
 
 body {
   margin: 0;
-  background: rgb(17 24 39);
-  color: white;
+  padding: 0;
   height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Стилизация скроллбара */
-::-webkit-scrollbar {
-  width: 8px;
+  background-color: #1C1B22;
+  width: 100%;
+  left: 0;
+  right: 0;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgb(31 41 55);
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgb(75 85 99);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgb(107 114 128);
-}
-
-/* Предотвращение выделения текста */
-.folder-item {
-  user-select: none;
-}
-
-/* Анимации */
-@keyframes slideIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-.sidebar-container {
-  animation: slideIn 0.3s ease-out;
-}
-
-/* Стили для триггера сайдбара */
-.sidebar-trigger {
-  position: fixed;
-  top: 50%;
-  left: 0;
-  width: 4px;
-  height: 100px;
-  background: rgb(75 85 99);
-  transform: translateY(-50%);
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.sidebar-trigger:hover {
-  background: rgb(107 114 128);
+/* или с небольшой прозрачностью */
+::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.2);
 }

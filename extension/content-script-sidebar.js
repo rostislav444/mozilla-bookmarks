@@ -1,89 +1,98 @@
-console.log('Bookmark Extension: Content script loaded');
-
-function createSidebarUI() {
-    const container = document.createElement('div');
-    container.id = 'bookmark-ext-container';
-    container.innerHTML = `
-        <div id="bookmark-ext-trigger">
-            <div class="trigger-line"></div>
-        </div>
-        <div id="bookmark-ext-content">
-            <div class="sidebar-header">
-                <h3>Закладки</h3>
-            </div>
-            <div class="bookmarks-list">
-                <!-- Здесь будут закладки -->
-            </div>
-        </div>
-    `;
-    document.body.appendChild(container);
-
-    // Получаем закладки через background script
-    browser.runtime.sendMessage({ type: 'GET_BOOKMARKS' })
-        .then(response => {
-            if (response && response.bookmarks) {
-                renderBookmarks(response.bookmarks);
-            }
-        })
-        .catch(error => console.error('Error fetching bookmarks:', error));
-}
-
-function renderBookmarks(bookmarks) {
-    const bookmarksList = document.querySelector('.bookmarks-list');
-    if (!bookmarksList) return;
-
-    function processBookmarkNode(node) {
-        if (node.url) {
-            return `
-                <div class="bookmark-item">
-                    <img src="${node.favIconUrl || 'icons/default-favicon.svg'}" alt="" class="favicon">
-                    <a href="${node.url}" class="bookmark-link">${node.title}</a>
-                </div>
-            `;
-        } else if (node.children) {
-            const childrenHtml = node.children.map(processBookmarkNode).join('');
-            if (childrenHtml) {
-                return `
-                    <div class="bookmark-folder">
-                        <div class="folder-header">${node.title}</div>
-                        <div class="folder-content">${childrenHtml}</div>
-                    </div>
-                `;
-            }
-        }
-        return '';
-    }
-
-    bookmarksList.innerHTML = bookmarks.map(processBookmarkNode).join('');
-}
-
-// Инициализация сайдбара
 function initSidebar() {
-    if (document.getElementById('bookmark-ext-container')) return;
+    if (document.getElementById('bookmark-sidebar-frame')) return;
 
-    createSidebarUI();
+    // Создаем trigger-полоску
+    const trigger = document.createElement('div');
+    trigger.id = 'bookmark-sidebar-trigger';
+    trigger.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100vh;
+        background: rgba(75, 85, 99, 0.3);
+        z-index: 2147483647;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    `;
 
+    // Создаем iframe
+    const iframe = document.createElement('iframe');
+    iframe.id = 'bookmark-sidebar-frame';
+    iframe.src = browser.runtime.getURL('sidebar.html');
+    iframe.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: -400px;
+        width: 400px;
+        height: 100vh;
+        border: none;
+        z-index: 2147483646;
+        background: transparent;
+        transition: left 0.3s ease;
+    `;
+
+    // Добавляем элементы на страницу
+    document.body.appendChild(trigger);
+    document.body.appendChild(iframe);
+
+    // Обработчики событий
     let isOpen = false;
-    const trigger = document.getElementById('bookmark-ext-trigger');
-    const content = document.getElementById('bookmark-ext-content');
-    const container = document.getElementById('bookmark-ext-container');
+    let timeoutId = null;
 
-    if (trigger && content && container) {
-        trigger.addEventListener('mouseenter', () => {
-            if (!isOpen) {
-                container.classList.add('sidebar-open');
-                isOpen = true;
-            }
-        });
-
-        container.addEventListener('mouseleave', (e) => {
-            const rect = container.getBoundingClientRect();
-            if (e.clientX > rect.right || e.clientX < rect.left) {
-                container.classList.remove('sidebar-open');
-                isOpen = false;
-            }
-        });
+    function openSidebar() {
+        if (timeoutId) clearTimeout(timeoutId);
+        iframe.style.left = '0';
+        isOpen = true;
     }
+
+    function closeSidebar() {
+        timeoutId = setTimeout(() => {
+            iframe.style.left = '-400px';
+            isOpen = false;
+        }, 300); // Небольшая задержка перед закрытием
+    }
+
+    // Показываем сайдбар при наведении на триггер
+    trigger.addEventListener('mouseenter', () => {
+        openSidebar();
+    });
+
+    // Наведение на iframe отменяет закрытие
+    iframe.addEventListener('mouseenter', () => {
+        if (timeoutId) clearTimeout(timeoutId);
+    });
+
+    // Уход мыши с iframe запускает закрытие
+    iframe.addEventListener('mouseleave', (e) => {
+        // Проверяем, что мышь не перешла на триггер
+        if (e.relatedTarget !== trigger) {
+            closeSidebar();
+        }
+    });
+
+    // Уход мыши с триггера запускает закрытие, если мышь не перешла на iframe
+    trigger.addEventListener('mouseleave', (e) => {
+        if (e.relatedTarget !== iframe) {
+            closeSidebar();
+        }
+    });
+
+    // При клике вне сайдбара закрываем его
+    document.addEventListener('click', (e) => {
+        if (!iframe.contains(e.target) && !trigger.contains(e.target) && isOpen) {
+            closeSidebar();
+        }
+    });
+
+    // Триггер меняет цвет при наведении
+    trigger.addEventListener('mouseenter', () => {
+        trigger.style.background = 'rgba(75, 85, 99, 0.5)';
+    });
+
+    trigger.addEventListener('mouseleave', () => {
+        trigger.style.background = 'rgba(75, 85, 99, 0.3)';
+    });
 }
 
 // Запускаем инициализацию

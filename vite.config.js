@@ -1,6 +1,6 @@
-import {defineConfig} from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import {resolve} from 'path'
+import { resolve } from 'path'
 
 export default defineConfig({
     plugins: [react()],
@@ -46,9 +46,17 @@ export default defineConfig({
                     if (id.includes('/Popup/components/')) {
                         return 'popup-components'
                     }
+                    // Компоненты sidebar в отдельный чанк
+                    if (id.includes('/Sidebar/components/')) {
+                        return 'sidebar-components'
+                    }
                     // Остальной код popup
                     if (id.includes('/Popup/')) {
                         return 'popup'
+                    }
+                    // Остальной код sidebar
+                    if (id.includes('/Sidebar/')) {
+                        return 'sidebar'
                     }
                     // Остальной код приложения
                     if (id.includes('/App/')) {
