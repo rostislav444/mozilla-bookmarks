@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "cp manifest.json extension/background.js extension/content-script.js dist/ && cp -r icons dist/",
+    "postbuild": "cp manifest.json dist/ && cp -r extension dist/ &&  cp -r icons dist/",
     "preview": "vite preview"
   },
   "dependencies": {

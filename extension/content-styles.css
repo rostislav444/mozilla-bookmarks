@@ -1,26 +1,124 @@
-#bookmark-sidebar-trigger:hover,
-#bookmark-sidebar-content:hover {
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+#bookmark-ext-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 2147483647;
+    font-family: system-ui, -apple-system, sans-serif;
+    pointer-events: none;
 }
 
-#bookmark-sidebar-content {
+#bookmark-ext-trigger {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    pointer-events: all;
+    transition: all 0.3s ease;
+}
+
+#bookmark-ext-content {
+    position: absolute;
+    top: 0;
+    left: -300px;
+    width: 300px;
+    height: 100%;
+    background: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(8px);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    pointer-events: all;
     overflow-y: auto;
-    scroll-behavior: smooth;
 }
 
-#bookmark-sidebar-content::-webkit-scrollbar {
+.sidebar-open #bookmark-ext-trigger {
+    width: 300px;
+    background: transparent;
+}
+
+.sidebar-open #bookmark-ext-content {
+    left: 0;
+}
+
+/* Стили для контента сайдбара */
+.sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.bookmarks-list {
+    padding: 8px;
+}
+
+.bookmark-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.bookmark-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.favicon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+.bookmark-link {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.folder-header {
+    padding: 8px;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.folder-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.folder-content {
+    padding-left: 16px;
+}
+
+/* Стилизация скроллбара */
+#bookmark-ext-content::-webkit-scrollbar {
     width: 4px;
 }
 
-#bookmark-sidebar-content::-webkit-scrollbar-track {
+#bookmark-ext-content::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1);
 }
 
-#bookmark-sidebar-content::-webkit-scrollbar-thumb {
+#bookmark-ext-content::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 2px;
 }
 
-#bookmark-sidebar-content::-webkit-scrollbar-thumb:hover {
+#bookmark-ext-content::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
 }

@@ -11,6 +11,7 @@
     "bookmarks",
     "tabs",
     "activeTab",
+    "<all_urls>",
     "*://duckduckgo.com/*",
     "*://ac.duckduckgo.com/*"
   ],
@@ -24,15 +25,19 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content-script.js"],
-      "css": ["content-styles.css"]
+      "js": ["extension/content-script.js"],
+      "css": ["extension/content-styles.css"],
+      "run_at": "document_start"
     }
   ],
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
+  "chrome_settings_overrides": {
+    "homepage": "index.html"
+  },
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["extension/background.js"]
   },
   "content_security_policy": "script-src 'self'; object-src 'self'; img-src 'self' https://* data:;",
   "applications": {
