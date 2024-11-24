@@ -6,6 +6,29 @@ const ROWS_TO_SHOW = 3;
 const FOLDER_WIDTH = 110;
 const FOLDER_GAP = 8;
 
+// Функция сортировки
+const sortBookmarks = (items) => {
+    return [...items].sort((a, b) => {
+        // Если разница во времени добавления больше часа (3600000 мс),
+        // сортируем по дате (новые сверху)
+        const timeThreshold = 3600000; // 1 час в миллисекундах
+        const timeDiff = Math.abs(b.dateAdded - a.dateAdded);
+
+        if (timeDiff > timeThreshold) {
+            return b.dateAdded - a.dateAdded;
+        }
+
+        // Если элементы добавлены примерно в одно время,
+        // сортируем по типу (папки/закладки) и затем по имени
+        if ((!a.url && b.url) || (a.url && !b.url)) {
+            return a.url ? 1 : -1;
+        }
+
+        return a.title.localeCompare(b.title);
+    });
+};
+
+
 export const BookmarkFolder = ({
                                    node,
                                    depth = 0,
@@ -18,61 +41,55 @@ export const BookmarkFolder = ({
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
     const [foldersPerPage, setFoldersPerPage] = useState(24);
+    const [currentFolder, setCurrentFolder] = useState(node);
     const containerRef = useRef(null);
 
     if (!node) return null;
 
-    // Добавляем эффект для обновления текущего пути при изменении закладок
-    useEffect(() => {
-        const updateCurrentPath = async () => {
-            try {
-                // Получаем актуальные данные для каждой папки в пути
+    // Функция обновления текущей папки и пути
+    const refreshCurrentFolder = async () => {
+        try {
+            const updatedFolder = await browser.bookmarks.getSubTree(currentFolder.id);
+            if (updatedFolder && updatedFolder[0]) {
+                const sortedFolder = {
+                    ...updatedFolder[0],
+                    children: sortBookmarks(updatedFolder[0].children || [])
+                };
+                setCurrentFolder(sortedFolder);
+
                 const updatedPath = await Promise.all(
                     currentPath.map(async (folder) => {
-                        const updatedFolder = await browser.bookmarks.getSubTree(folder.id);
-                        return updatedFolder[0];
+                        const updated = await browser.bookmarks.getSubTree(folder.id);
+                        return {
+                            ...updated[0],
+                            children: sortBookmarks(updated[0].children || [])
+                        };
                     })
                 );
                 setCurrentPath(updatedPath);
-            } catch (error) {
-                console.error('Error updating current path:', error);
             }
-        };
+        } catch (error) {
+            console.error('Error refreshing folder:', error);
+        }
+    };
 
+    useEffect(() => {
         const handleBookmarkChanges = () => {
-            updateCurrentPath();
+            refreshCurrentFolder();
         };
 
-        // Подписываемся на события изменений закладок
         browser.bookmarks.onCreated.addListener(handleBookmarkChanges);
         browser.bookmarks.onRemoved.addListener(handleBookmarkChanges);
         browser.bookmarks.onChanged.addListener(handleBookmarkChanges);
         browser.bookmarks.onMoved.addListener(handleBookmarkChanges);
 
         return () => {
-            // Отписываемся от событий при размонтировании
             browser.bookmarks.onCreated.removeListener(handleBookmarkChanges);
             browser.bookmarks.onRemoved.removeListener(handleBookmarkChanges);
             browser.bookmarks.onChanged.removeListener(handleBookmarkChanges);
             browser.bookmarks.onMoved.removeListener(handleBookmarkChanges);
         };
-    }, [currentPath]);
-
-    const currentFolder = currentPath[currentPath.length - 1];
-    const childrenArray = currentFolder.children || [];
-
-    // Остальной код компонента остается без изменений...
-    const calculateFoldersPerPage = () => {
-        if (containerRef.current) {
-            const containerWidth = containerRef.current.offsetWidth - 72;
-            const foldersPerRow = Math.floor(containerWidth / (FOLDER_WIDTH + FOLDER_GAP));
-            const newFoldersPerPage = foldersPerRow * ROWS_TO_SHOW
-            if (newFoldersPerPage !== foldersPerPage) {
-                setFoldersPerPage(newFoldersPerPage);
-                setCurrentPage(prev => Math.min(prev, Math.ceil(filteredFolders.length / newFoldersPerPage)));
-            }
-        }
-    };
+    }, [currentFolder.id]);
 
     useEffect(() => {
         calculateFoldersPerPage();
@@ -83,6 +100,22 @@ export const BookmarkFolder = ({
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    const calculateFoldersPerPage = () => {
+        if (containerRef.current) {
+            const containerWidth = containerRef.current.offsetWidth - 72;
+            const foldersPerRow = Math.floor(containerWidth / (FOLDER_WIDTH + FOLDER_GAP));
+            const newFoldersPerPage = foldersPerRow * ROWS_TO_SHOW;
+            if (newFoldersPerPage !== foldersPerPage) {
+                setFoldersPerPage(newFoldersPerPage);
+                setCurrentPage(prev => Math.min(prev, Math.ceil(filteredFolders.length / newFoldersPerPage)));
+            }
+        }
+    };
+
+    const childrenArray = useMemo(() => {
+        return sortBookmarks(currentFolder.children || []);
+    }, [currentFolder]);
 
     const searchInFolder = (folder, query) => {
         const results = {
@@ -120,8 +153,12 @@ export const BookmarkFolder = ({
             };
         }
 
-        return searchInFolder(currentFolder, searchQuery);
-    }, [currentFolder, searchQuery]);
+        const results = searchInFolder(currentFolder, searchQuery);
+        return {
+            folders: sortBookmarks(results.folders),
+            bookmarks: sortBookmarks(results.bookmarks)
+        };
+    }, [currentFolder, searchQuery, childrenArray]);
 
     const filteredFolders = filteredItems.folders;
     const filteredBookmarks = filteredItems.bookmarks;
@@ -131,12 +168,23 @@ export const BookmarkFolder = ({
     const endIndex = startIndex + foldersPerPage;
     const currentFolders = filteredFolders.slice(startIndex, endIndex);
 
-    const handleFolderClick = (folder) => {
+    const handleFolderClick = async (folder) => {
         const folderIndex = currentPath.findIndex(item => item.id === folder.id);
         if (folderIndex !== -1) {
+            const updatedFolder = {
+                ...folder,
+                children: sortBookmarks(folder.children || [])
+            };
             setCurrentPath(currentPath.slice(0, folderIndex + 1));
+            setCurrentFolder(updatedFolder);
         } else {
-            setCurrentPath([...currentPath, folder]);
+            const updatedFolder = await browser.bookmarks.getSubTree(folder.id);
+            const sortedFolder = {
+                ...updatedFolder[0],
+                children: sortBookmarks(updatedFolder[0].children || [])
+            };
+            setCurrentPath([...currentPath, sortedFolder]);
+            setCurrentFolder(sortedFolder);
         }
         setCurrentPage(1);
         setSearchQuery('');
@@ -192,16 +240,9 @@ export const BookmarkFolder = ({
     const renderBookmarks = () => {
         if (filteredBookmarks.length === 0) return null;
 
-        const handleUpdate = async () => {
+        const handleBookmarkUpdate = async () => {
             await onUpdate();
-            // Обновляем текущий путь после обновления общего состояния
-            const updatedPath = await Promise.all(
-                currentPath.map(async (folder) => {
-                    const updatedFolder = await browser.bookmarks.getSubTree(folder.id);
-                    return updatedFolder[0];
-                })
-            );
-            setCurrentPath(updatedPath);
+            await refreshCurrentFolder();
         };
 
         return (
@@ -213,7 +254,7 @@ export const BookmarkFolder = ({
                         isFavorite={isFavorite}
                         onToggleFavorite={onToggleFavorite}
                         bookmarks={bookmarks}
-                        onUpdate={handleUpdate}
+                        onUpdate={handleBookmarkUpdate}
                     />
                 ))}
             </div>

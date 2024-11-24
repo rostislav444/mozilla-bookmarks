@@ -27,13 +27,12 @@ export const BookmarkEditModal = ({bookmark, onClose, folders, onUpdate}) => {
                 });
             }
 
+            // Ждем завершения обновления
             await onUpdate();
-            showToast('Закладка успешно обновлена');
 
-            // Добавляем задержку перед закрытием
-            setTimeout(() => {
-                onClose();
-            }, 1500);
+            showToast('Закладка успешно обновлена');
+            onClose(); // Закрываем модалку сразу
+
         } catch (error) {
             console.error('Error updating bookmark:', error);
             showToast('Ошибка при обновлении закладки', 'error');
