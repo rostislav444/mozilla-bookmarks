@@ -1,14 +1,16 @@
 import {Link, Star, StarOff, Pencil} from 'lucide-react';
 import {useState, useEffect} from 'react';
 import BookmarkEditModal from './BookmarkEditModal';
+import {useBookmarks} from '../context/BookmarksContext';
 
 export const BookmarkItem = ({
                                  bookmark,
                                  isFavorite,
                                  onToggleFavorite,
                                  bookmarks,
-                                 onUpdate  // Добавляем в пропсы
+                                 onUpdate
                              }) => {
+    const bookmarksAdapter = useBookmarks();
     const [faviconUrl, setFaviconUrl] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -26,26 +28,32 @@ export const BookmarkItem = ({
     useEffect(() => {
         const checkBookmark = async () => {
             try {
-                await browser.bookmarks.get(bookmark.id);
+                // Используем адаптер вместо прямого обращения к browser.bookmarks
+                await bookmarksAdapter.get(bookmark.id);
             } catch (error) {
                 // Если закладка не найдена, вызываем обновление
                 onUpdate();
             }
         };
         checkBookmark();
-    }, [bookmark.id]);
+    }, [bookmark.id, bookmarksAdapter]);
 
-    if (!bookmark?.url) return null;
+    const handleToggleFavorite = (e) => {
+        e.preventDefault();
+        onToggleFavorite(bookmark);
+    };
+
+    const handleOpenEditModal = (e) => {
+        e.preventDefault();
+        setIsEditModalOpen(true);
+    };
 
     return (
         <div className="relative group h-[180px]">
             <div
                 className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <button
-                    onClick={(e) => {
-                        e.preventDefault();
-                        onToggleFavorite(bookmark);
-                    }}
+                    onClick={handleToggleFavorite}
                     className="p-2 bg-[#2B2A33] rounded-md hover:bg-[#42414D] transition-colors"
                 >
                     {isFavorite(bookmark.id) ? (
@@ -55,10 +63,7 @@ export const BookmarkItem = ({
                     )}
                 </button>
                 <button
-                    onClick={(e) => {
-                        e.preventDefault();
-                        setIsEditModalOpen(true);
-                    }}
+                    onClick={handleOpenEditModal}
                     className="p-2 bg-[#2B2A33] rounded-md hover:bg-[#42414D] transition-colors"
                 >
                     <Pencil className="w-4 h-4 text-gray-400"/>
@@ -106,7 +111,8 @@ export const BookmarkItem = ({
                     bookmark={bookmark}
                     folders={bookmarks}
                     onClose={() => setIsEditModalOpen(false)}
-                    onUpdate={onUpdate}  // Теперь onUpdate определен
+                    onUpdate={onUpdate}
+                    bookmarksAdapter={bookmarksAdapter} // Передаем адаптер в модальное окно
                 />
             )}
         </div>

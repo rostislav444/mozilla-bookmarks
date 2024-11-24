@@ -1,9 +1,10 @@
-import React, {useState, useEffect} from 'react';
-import {Pencil, Trash2, FolderTree, X} from 'lucide-react';
+import React, {useState} from 'react';
+import {Pencil, Trash2, X} from 'lucide-react';
 import {Toast} from "@components/Toast.jsx";
-
+import {useBookmarks} from '@/App/context/BookmarksContext';
 
 export const BookmarkEditModal = ({bookmark, onClose, folders, onUpdate}) => {
+    const bookmarksAdapter = useBookmarks();
     const [title, setTitle] = useState(bookmark.title);
     const [url, setUrl] = useState(bookmark.url);
     const [selectedFolderId, setSelectedFolderId] = useState(bookmark.parentId);
@@ -16,13 +17,15 @@ export const BookmarkEditModal = ({bookmark, onClose, folders, onUpdate}) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await browser.bookmarks.update(bookmark.id, {
+            // Используем адаптер для обновления закладки
+            await bookmarksAdapter.update(bookmark.id, {
                 title,
                 url
             });
 
+            // Если папка изменилась, перемещаем закладку
             if (selectedFolderId !== bookmark.parentId) {
-                await browser.bookmarks.move(bookmark.id, {
+                await bookmarksAdapter.move(bookmark.id, {
                     parentId: selectedFolderId
                 });
             }
@@ -42,7 +45,8 @@ export const BookmarkEditModal = ({bookmark, onClose, folders, onUpdate}) => {
     const handleDelete = async () => {
         if (window.confirm('Вы уверены, что хотите удалить эту закладку?')) {
             try {
-                await browser.bookmarks.remove(bookmark.id);
+                // Используем адаптер для удаления закладки
+                await bookmarksAdapter.remove(bookmark.id);
                 await onUpdate();
                 showToast('Закладка успешно удалена');
 

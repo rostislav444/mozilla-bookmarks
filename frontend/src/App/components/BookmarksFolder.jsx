@@ -1,25 +1,22 @@
 import {BookmarkItem} from "@components/BookmarkItem.jsx";
 import {useState, useMemo, useEffect, useRef} from "react";
 import {ChevronRight, Folder, ChevronLeft, Search} from 'lucide-react';
+import {useBookmarks} from '@/App/context/BookmarksContext';
 
 const ROWS_TO_SHOW = 3;
 const FOLDER_WIDTH = 110;
 const FOLDER_GAP = 8;
 
-// Функция сортировки
+// Функция сортировки остается без изменений
 const sortBookmarks = (items) => {
     return [...items].sort((a, b) => {
-        // Если разница во времени добавления больше часа (3600000 мс),
-        // сортируем по дате (новые сверху)
-        const timeThreshold = 3600000; // 1 час в миллисекундах
+        const timeThreshold = 3600000;
         const timeDiff = Math.abs(b.dateAdded - a.dateAdded);
 
         if (timeDiff > timeThreshold) {
             return b.dateAdded - a.dateAdded;
         }
 
-        // Если элементы добавлены примерно в одно время,
-        // сортируем по типу (папки/закладки) и затем по имени
         if ((!a.url && b.url) || (a.url && !b.url)) {
             return a.url ? 1 : -1;
         }
@@ -27,7 +24,6 @@ const sortBookmarks = (items) => {
         return a.title.localeCompare(b.title);
     });
 };
-
 
 export const BookmarkFolder = ({
                                    node,
@@ -37,6 +33,7 @@ export const BookmarkFolder = ({
                                    bookmarks,
                                    onUpdate
                                }) => {
+    const bookmarksAdapter = useBookmarks();
     const [currentPath, setCurrentPath] = useState([node]);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
@@ -46,10 +43,10 @@ export const BookmarkFolder = ({
 
     if (!node) return null;
 
-    // Функция обновления текущей папки и пути
+    // Обновляем функцию refreshCurrentFolder для работы с адаптером
     const refreshCurrentFolder = async () => {
         try {
-            const updatedFolder = await browser.bookmarks.getSubTree(currentFolder.id);
+            const updatedFolder = await bookmarksAdapter.getSubTree(currentFolder.id);
             if (updatedFolder && updatedFolder[0]) {
                 const sortedFolder = {
                     ...updatedFolder[0],
@@ -59,7 +56,7 @@ export const BookmarkFolder = ({
 
                 const updatedPath = await Promise.all(
                     currentPath.map(async (folder) => {
-                        const updated = await browser.bookmarks.getSubTree(folder.id);
+                        const updated = await bookmarksAdapter.getSubTree(folder.id);
                         return {
                             ...updated[0],
                             children: sortBookmarks(updated[0].children || [])
@@ -78,19 +75,15 @@ export const BookmarkFolder = ({
             refreshCurrentFolder();
         };
 
-        browser.bookmarks.onCreated.addListener(handleBookmarkChanges);
-        browser.bookmarks.onRemoved.addListener(handleBookmarkChanges);
-        browser.bookmarks.onChanged.addListener(handleBookmarkChanges);
-        browser.bookmarks.onMoved.addListener(handleBookmarkChanges);
+        // Используем адаптер для подписки на изменения
+        bookmarksAdapter.subscribeToChanges(handleBookmarkChanges);
 
         return () => {
-            browser.bookmarks.onCreated.removeListener(handleBookmarkChanges);
-            browser.bookmarks.onRemoved.removeListener(handleBookmarkChanges);
-            browser.bookmarks.onChanged.removeListener(handleBookmarkChanges);
-            browser.bookmarks.onMoved.removeListener(handleBookmarkChanges);
+            bookmarksAdapter.unsubscribeFromChanges(handleBookmarkChanges);
         };
-    }, [currentFolder.id]);
+    }, [currentFolder.id, bookmarksAdapter]);
 
+    // Остальные useEffect остаются без изменений
     useEffect(() => {
         calculateFoldersPerPage();
         const handleResize = () => {
@@ -101,6 +94,30 @@ export const BookmarkFolder = ({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Обновляем handleFolderClick для работы с адаптером
+    const handleFolderClick = async (folder) => {
+        const folderIndex = currentPath.findIndex(item => item.id === folder.id);
+        if (folderIndex !== -1) {
+            const updatedFolder = {
+                ...folder,
+                children: sortBookmarks(folder.children || [])
+            };
+            setCurrentPath(currentPath.slice(0, folderIndex + 1));
+            setCurrentFolder(updatedFolder);
+        } else {
+            const updatedFolder = await bookmarksAdapter.getSubTree(folder.id);
+            const sortedFolder = {
+                ...updatedFolder[0],
+                children: sortBookmarks(updatedFolder[0].children || [])
+            };
+            setCurrentPath([...currentPath, sortedFolder]);
+            setCurrentFolder(sortedFolder);
+        }
+        setCurrentPage(1);
+        setSearchQuery('');
+    };
+
+    // Остальные функции и методы рендеринга остаются без изменений
     const calculateFoldersPerPage = () => {
         if (containerRef.current) {
             const containerWidth = containerRef.current.offsetWidth - 72;
@@ -117,6 +134,7 @@ export const BookmarkFolder = ({
         return sortBookmarks(currentFolder.children || []);
     }, [currentFolder]);
 
+    // Функции поиска и фильтрации остаются без изменений
     const searchInFolder = (folder, query) => {
         const results = {
             folders: [],
@@ -168,28 +186,7 @@ export const BookmarkFolder = ({
     const endIndex = startIndex + foldersPerPage;
     const currentFolders = filteredFolders.slice(startIndex, endIndex);
 
-    const handleFolderClick = async (folder) => {
-        const folderIndex = currentPath.findIndex(item => item.id === folder.id);
-        if (folderIndex !== -1) {
-            const updatedFolder = {
-                ...folder,
-                children: sortBookmarks(folder.children || [])
-            };
-            setCurrentPath(currentPath.slice(0, folderIndex + 1));
-            setCurrentFolder(updatedFolder);
-        } else {
-            const updatedFolder = await browser.bookmarks.getSubTree(folder.id);
-            const sortedFolder = {
-                ...updatedFolder[0],
-                children: sortBookmarks(updatedFolder[0].children || [])
-            };
-            setCurrentPath([...currentPath, sortedFolder]);
-            setCurrentFolder(sortedFolder);
-        }
-        setCurrentPage(1);
-        setSearchQuery('');
-    };
-
+    // Компоненты рендеринга остаются без изменений
     const renderBreadcrumbs = () => {
         return (
             <div className="flex items-center gap-1">
@@ -217,7 +214,7 @@ export const BookmarkFolder = ({
 
         return (
             <div className="mb-6" ref={containerRef}>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))]  gap-4">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-4">
                     {currentFolders.map((folder) => (
                         <button
                             key={folder.id}
@@ -295,6 +292,7 @@ export const BookmarkFolder = ({
         );
     };
 
+    // JSX остается без изменений
     return (
         <div id={`folder-${node.id}`} className="w-full mt-12">
             <div className="flex items-center gap-2 mb-6">
