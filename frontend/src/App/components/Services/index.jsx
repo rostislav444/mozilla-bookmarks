@@ -3,12 +3,13 @@ import {Plus, SquareMenu} from 'lucide-react';
 import {ReactSortable} from "react-sortablejs";
 import {ServiceItem} from "@components/Services/ServiceItem.jsx";
 import {ServiceModal} from "@components/Services/ServiceModal.jsx";
+import {useTheme} from "@/App/context/ThemeContext.jsx";
 
 const Switch = ({checked, onChange}) => (
     <button
         onClick={() => onChange(!checked)}
         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-            checked ? 'bg-blue-500' : 'bg-gray-700'
+            checked ? 'bg-accent' : 'bg-color3'
         }`}
     >
         <span
@@ -20,6 +21,7 @@ const Switch = ({checked, onChange}) => (
 );
 
 export const ServicesMenu = () => {
+    const {colors, classes} = useTheme();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingService, setEditingService] = useState(null);
@@ -88,20 +90,26 @@ export const ServicesMenu = () => {
         <div className="relative" ref={menuRef}>
             <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 hover:bg-[#52525E] rounded-md transition-colors"
+                className={`p-2 hover:bg-color3 rounded-md transition-colors`}
             >
                 <div className='w-4 h-4 grid grid-cols-3 grid-rows-3 gap-0.5'>
                     {[...Array(9)].map((_, i) => (
-                        <div className='w-1 h-1 rounded-full bg-gray-300'/>
+                        <div
+                            key={i}
+                            className="w-1 h-1 rounded-full"
+                            style={{backgroundColor: 'var(--text1)'}}
+                        />
                     ))}
                 </div>
             </button>
             {isMenuOpen && (
                 <div
-                    className="absolute top-full right-0 mt-2 w-[320px] bg-[#1C1B22] rounded-lg border border-gray-700/50 overflow-hidden z-[60]">
+                    className={`absolute top-full right-0 mt-2 w-[320px] bg-color2 rounded-lg ${classes.border} overflow-hidden z-[60]
+                       shadow-lg transition-transform duration-300 shadow-color1
+                    `}>
                     <div className="p-4">
                         <div className="flex items-center justify-between mb-4 px-1">
-                            <h3 className="text-base font-semibold text-white">Сервисы</h3>
+                            <h3 className={`text-base font-semibold ${classes.text}`}>Сервисы</h3>
                             <Switch checked={isEditMode} onChange={setIsEditMode}/>
                         </div>
 
@@ -134,13 +142,12 @@ export const ServicesMenu = () => {
                                     setEditingService(null);
                                     setIsModalOpen(true);
                                 }}
-                                className="flex flex-col items-center justify-center p-2 hover:bg-[#52525E] rounded-lg transition-colors w-full mt-2"
+                                className={`flex flex-col items-center justify-center p-2 hover:bg-color3 rounded-lg transition-colors w-full mt-2`}
                             >
-                                <div
-                                    className="w-7 h-7 bg-[#42414D] rounded-md flex items-center justify-center mb-1.5">
-                                    <Plus className="w-4 h-4 text-gray-400"/>
+                                <div className={`w-7 h-7 bg-color3 rounded-md flex items-center justify-center mb-1.5`}>
+                                    <Plus className={`w-4 h-4 ${classes.textSecondary}`}/>
                                 </div>
-                                <span className="text-xs text-gray-300">Добавить</span>
+                                <span className={`text-xs ${classes.text}`}>Добавить</span>
                             </button>
                         )}
                     </div>
@@ -158,4 +165,4 @@ export const ServicesMenu = () => {
             />
         </div>
     );
-}
+};

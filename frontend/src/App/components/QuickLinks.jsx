@@ -1,8 +1,10 @@
 import React, {useEffect, useState, useRef} from "react";
-import {Edit, Link as LinkIcon, Plus, Star, Trash, X} from "lucide-react";
+import {Edit, Folder, Link as LinkIcon, Plus, Star, Trash, X} from "lucide-react";
 import {ReactSortable} from "react-sortablejs";
+import {useTheme} from "@/App/context/ThemeContext.jsx";
 
 const WebsiteIcon = ({url}) => {
+    const {classes} = useTheme();
     const [iconLoaded, setIconLoaded] = useState(false);
     const [iconError, setIconError] = useState(false);
     const domain = new URL(url).hostname;
@@ -14,13 +16,15 @@ const WebsiteIcon = ({url}) => {
     };
 
     return (
-        <div className="p-1.5 bg-blue-500/10 rounded-md relative w-7 h-7 flex items-center justify-center">
-            {(!iconLoaded || iconError) && <LinkIcon className="w-4 h-4 text-gray-400 absolute"/>}
+        <div className="relative w-8 h-8 flex items-center justify-center bg-accent/10 rounded-lg overflow-hidden">
+            {(!iconLoaded || iconError) && (
+                <LinkIcon className={`w-5 h-5 ${classes.textSecondary}`} />
+            )}
             {!iconError && (
                 <img
                     src={iconUrl}
                     alt={`${domain} icon`}
-                    className={`w-4 h-4 object-contain absolute transition-opacity duration-200 ${
+                    className={`w-8 h-8 object-contain transition-opacity duration-200 ${
                         iconLoaded ? 'opacity-100' : 'opacity-0'
                     }`}
                     onLoad={() => {
@@ -36,51 +40,57 @@ const WebsiteIcon = ({url}) => {
 };
 
 const QuickLinkItem = ({link, onEdit, onDelete}) => {
+    const {classes} = useTheme();
+
+    const getDomainFromUrl = (url) => {
+        try {
+            return new URL(url).hostname.replace('www.', '');
+        } catch {
+            return url;
+        }
+    };
+
     return (
-        <div
-            className="relative group bg-[#2B2A33] p-4 rounded-md hover:bg-[#42414D] transition-all duration-300 flex flex-col h-[120px]">
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
+        <div className={`relative group ${classes.surface} py-5 px-4 rounded-md hover:bg-color1-light-2 transition-all duration-300`}>
+            {/* Action buttons */}
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 flex gap-1.5">
                 <button
                     onClick={(e) => {
                         e.preventDefault();
                         onEdit(link);
                     }}
-                    className="p-1.5 bg-[#2B2A33] rounded-md hover:bg-[#52525E]"
+                    className={`p-1.5 ${classes.surface} rounded-md hover:bg-color4 transition-colors`}
                 >
-                    <Edit className="w-3.5 h-3.5 text-gray-300"/>
+                    <Edit className={`w-3.5 h-3.5 ${classes.text}`}/>
                 </button>
                 <button
                     onClick={(e) => {
                         e.preventDefault();
                         onDelete(link.id);
                     }}
-                    className="p-1.5 bg-red-500/20 rounded-md hover:bg-red-500/30"
+                    className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-md transition-colors"
                 >
                     <Trash className="w-3.5 h-3.5 text-red-400"/>
                 </button>
             </div>
-            <a href={link.url} className="flex flex-col h-full">
-                <div className="flex items-start justify-between mb-4">
-                    <WebsiteIcon url={link.url}/>
-                    <div className="flex items-center gap-2">
-                        <div
-                            className="text-[10px] text-gray-400 bg-[#42414D] px-1.5 py-0.5 rounded-md opacity-100 group-hover:opacity-0 translate-y-0 group-hover:-translate-y-1 transition-all duration-200">
-                            {new URL(link.url).hostname.replace('www.', '')}
-                        </div>
-                    </div>
+
+            <a href={link.url} className="flex items-center space-x-4">
+                <WebsiteIcon url={link.url} />
+                <div className="flex-1 min-w-0 ml-1 pb-1.5">
+                    <h4 className={`text-base ${classes.text} line-clamp-1 group-hover:text-accent transition-colors`}>
+                        {link.title}
+                    </h4>
+                    <p className={`${classes.textSecondary} text-xs line-clamp-1 mt-0.5`}>
+                        {link.url}
+                    </p>
                 </div>
-                <h4 className="text-[16px] text-white mb-0.5 line-clamp-2 group-hover:text-blue-400 transition-colors">
-                    {link.title}
-                </h4>
-                <p className="text-gray-400 text-[12px] line-clamp-2 overflow-hidden text-ellipsis">
-                    {link.url}
-                </p>
             </a>
         </div>
     );
 };
 
 const LinkModal = ({isOpen, onClose, onSave, editingLink = null}) => {
+    const {classes} = useTheme();
     const [title, setTitle] = useState(editingLink?.title || '');
     const [url, setUrl] = useState(editingLink?.url || '');
 
@@ -103,34 +113,34 @@ const LinkModal = ({isOpen, onClose, onSave, editingLink = null}) => {
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-[#2B2A33] rounded-lg p-4 w-full max-w-sm">
+            <div className={`${classes.surface} rounded-lg p-4 w-full max-w-sm`}>
                 <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-base font-semibold text-white">
+                    <h3 className={`text-base font-semibold ${classes.text}`}>
                         {editingLink ? 'Редактировать ссылку' : 'Добавить ссылку'}
                     </h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white">
+                    <button onClick={onClose} className={`${classes.textSecondary} hover:${classes.text}`}>
                         <X className="w-4 h-4"/>
                     </button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-3">
                         <div>
-                            <label className="block text-xs font-medium text-gray-300">Название</label>
+                            <label className={`block text-xs font-medium ${classes.textSecondary}`}>Название</label>
                             <input
                                 type="text"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="mt-1 w-full bg-[#42414D] border border-gray-600 rounded-md px-2.5 py-1.5 text-sm text-white"
+                                className={`mt-1 w-full bg-color3 border ${classes.border} rounded-md px-2.5 py-1.5 text-sm ${classes.text}`}
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-300">URL</label>
+                            <label className={`block text-xs font-medium ${classes.textSecondary}`}>URL</label>
                             <input
                                 type="url"
                                 value={url}
                                 onChange={(e) => setUrl(e.target.value)}
-                                className="mt-1 w-full bg-[#42414D] border border-gray-600 rounded-md px-2.5 py-1.5 text-sm text-white"
+                                className={`mt-1 w-full bg-color3 border ${classes.border} rounded-md px-2.5 py-1.5 text-sm ${classes.text}`}
                                 required
                             />
                         </div>
@@ -138,13 +148,13 @@ const LinkModal = ({isOpen, onClose, onSave, editingLink = null}) => {
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-3 py-1.5 bg-[#42414D] hover:bg-[#52525E] rounded-md text-sm text-white"
+                                className={`px-3 py-1.5 bg-color3 hover:bg-color4 rounded-md text-sm ${classes.text}`}
                             >
                                 Отмена
                             </button>
                             <button
                                 type="submit"
-                                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 rounded-md text-sm text-white"
+                                className="px-3 py-1.5 bg-accent hover:bg-accent/90 rounded-md text-sm text-white"
                             >
                                 {editingLink ? 'Сохранить' : 'Добавить'}
                             </button>
@@ -194,6 +204,7 @@ export const useFavorites = () => {
 };
 
 export const QuickLinks = ({favorites, updateFavorites}) => {
+    const {classes} = useTheme();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLink, setEditingLink] = useState(null);
 
@@ -229,20 +240,21 @@ export const QuickLinks = ({favorites, updateFavorites}) => {
     return (
         <>
             <div className="w-full mt-12 mb-6">
-                <div className="flex items-center mb-8">
+                <div className="flex items-center mb-6">
                     <div className="flex w-full justify-between gap-2">
                         <div className="flex">
-                            <div className="p-1.5 bg-blue-500/10 rounded-sm">
+                            <div className="p-1.5 bg-yellow-500/10 rounded-md mr-3">
                                 <Star className="w-5 h-5 text-yellow-400"/>
                             </div>
-                            <h3 className="text-lg ml-4 font-semibold text-white">Быстрые ссылки</h3>
+
+                            <h3 className={`text-lg ml-4 font-semibold ${classes.text}`}>Быстрые ссылки</h3>
                         </div>
 
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="ml-2 p-1.5 bg-gray-500/10 rounded-md hover:bg-gray-500/20 transition-colors"
+                            className="ml-2 p-1.5 bg-color3/50 rounded-md hover:bg-color1-light-2 transition-colors"
                         >
-                            <Plus className="w-5 h-5 text-gray-400"/>
+                            <Plus className={`w-5 h-5 ${classes.textSecondary}`}/>
                         </button>
                     </div>
                 </div>

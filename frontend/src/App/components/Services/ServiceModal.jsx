@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import * as LucideIcons from 'lucide-react';
 import {X, Search, Link as LinkIcon} from 'lucide-react';
+import {useTheme} from "@/App/context/ThemeContext.jsx";
 
 const IconSelector = ({selectedIcon, onSelect}) => {
     const [search, setSearch] = useState('');
@@ -73,6 +74,7 @@ const IconSelector = ({selectedIcon, onSelect}) => {
 };
 
 export const ServiceModal = ({isOpen, onClose, onSave, editingService = null}) => {
+    const {classes} = useTheme();
     const [name, setName] = useState('');
     const [url, setUrl] = useState('');
     const [icon, setIcon] = useState('');
@@ -112,38 +114,38 @@ export const ServiceModal = ({isOpen, onClose, onSave, editingService = null}) =
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[70]">
-            <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md">
+            <div className={`${classes.surface} rounded-xl p-6 w-full max-w-md`}>
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-semibold text-white">
+                    <h3 className={`text-xl font-semibold ${classes.text}`}>
                         {editingService ? 'Редактировать сервис' : 'Добавить сервис'}
                     </h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white">
+                    <button onClick={onClose} className={`${classes.textSecondary} hover:${classes.text}`}>
                         <X size={20}/>
                     </button>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-300">Название</label>
+                        <label className={`block text-sm font-medium ${classes.textSecondary}`}>Название</label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                            className={`mt-1 w-full ${classes.surface} ${classes.border} rounded-lg px-3 py-2 ${classes.text}`}
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-300">URL</label>
+                        <label className={`block text-sm font-medium ${classes.textSecondary}`}>URL</label>
                         <input
                             type="url"
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
-                            className="mt-1 w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                            className={`mt-1 w-full ${classes.surface} ${classes.border} rounded-lg px-3 py-2 ${classes.text}`}
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                        <label className={`block text-sm font-medium ${classes.textSecondary} mb-1`}>
                             Иконка
                         </label>
                         <div className="space-y-2">
@@ -153,7 +155,7 @@ export const ServiceModal = ({isOpen, onClose, onSave, editingService = null}) =
                                     value={icon}
                                     onChange={(e) => setIcon(e.target.value)}
                                     placeholder="URL иконки (необязательно)"
-                                    className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                                    className={`flex-1 ${classes.surface} ${classes.border} rounded-lg px-3 py-2 ${classes.text}`}
                                 />
                                 <LinkIcon className="w-5 h-5 text-gray-400"/>
                             </div>

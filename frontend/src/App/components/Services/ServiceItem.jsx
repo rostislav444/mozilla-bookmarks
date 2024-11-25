@@ -1,8 +1,10 @@
 import React, {useState} from 'react';
 import * as LucideIcons from 'lucide-react';
-import { Edit, Trash, GripHorizontal } from 'lucide-react';
+import {Edit, Trash, GripHorizontal} from 'lucide-react';
+import {useTheme} from "@/App/context/ThemeContext.jsx";
 
 export const ServiceItem = ({service, onEdit, onDelete, isDragging, isEditMode}) => {
+    const { classes } = useTheme();
     const [isHovered, setIsHovered] = useState(false);
 
     const renderIcon = () => {
@@ -38,15 +40,16 @@ export const ServiceItem = ({service, onEdit, onDelete, isDragging, isEditMode})
             );
         } else if (service.lucideIcon && LucideIcons[service.lucideIcon]) {
             const Icon = LucideIcons[service.lucideIcon];
-            return <Icon size={16} className="text-gray-300" />;
+            return <Icon size={16} className="text-gray-300"/>;
         }
 
-        return <LucideIcons.Link size={16} className="text-gray-300" />;
+        return <LucideIcons.Link size={16} className="text-gray-300"/>;
     };
+
 
     return (
         <div
-            className={`relative group bg-[#2B2A33] p-3 rounded-lg hover:bg-[#52525E] transition-all duration-200 ${
+            className={`relative group ${classes.surface} p-3 rounded-lg hover:bg-color3 transition-all duration-200 ${
                 isDragging ? 'cursor-grabbing' : isEditMode ? 'cursor-grab' : ''
             }`}
             onMouseEnter={() => setIsHovered(true)}
@@ -54,16 +57,17 @@ export const ServiceItem = ({service, onEdit, onDelete, isDragging, isEditMode})
         >
             {isEditMode && (
                 <>
-                    <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div
+                        className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 onEdit(service);
                             }}
-                            className="p-1 bg-[#42414D] rounded-md hover:bg-[#52525E]"
+                            className={`p-1 bg-color3 rounded-md hover:bg-color4`}
                         >
-                            <Edit className="w-3 h-3 text-gray-300"/>
+                            <Edit className={`w-3 h-3 ${classes.text}`}/>
                         </button>
                         <button
                             onClick={(e) => {
@@ -80,7 +84,7 @@ export const ServiceItem = ({service, onEdit, onDelete, isDragging, isEditMode})
                     </div>
 
                     <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <GripHorizontal className="w-3 h-3 text-gray-400"/>
+                        <GripHorizontal className={`w-3 h-3 ${classes.textSecondary}`}/>
                     </div>
                 </>
             )}
@@ -99,7 +103,7 @@ export const ServiceItem = ({service, onEdit, onDelete, isDragging, isEditMode})
                 <div className="w-8 h-8 rounded-sm flex items-center justify-center mb-1.5">
                     {renderIcon()}
                 </div>
-                <span className="text-xs text-gray-300 text-center">
+                <span className={`text-xs ${classes.text} text-center`}>
                     {service.name}
                 </span>
             </a>

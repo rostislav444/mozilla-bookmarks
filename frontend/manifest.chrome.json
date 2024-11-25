@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Modern Bookmarks",
   "version": "1.0",
   "description": "Modern bookmark manager with React",
@@ -9,16 +9,17 @@
   },
   "permissions": [
     "storage",
-    "theme",
     "bookmarks",
     "tabs",
-    "activeTab",
+    "activeTab"
+  ],
+  "host_permissions": [
     "<all_urls>",
     "*://duckduckgo.com/*",
     "*://ac.duckduckgo.com/*",
     "http://localhost:5005/*"
   ],
-  "browser_action": {
+  "action": {
     "default_icon": {
       "48": "icons/bookmark.svg"
     },
@@ -42,23 +43,14 @@
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
-  "chrome_settings_overrides": {
-    "homepage": "index.html"
-  },
   "background": {
-    "scripts": [
-      "extension/background-bookmarks.js",
-      "extension/background-sidebar.js"
-    ]
+    "service_worker": "extension/background-bookmarks.js"
   },
-  "content_security_policy": "script-src 'self'; object-src 'self'; img-src 'self' https://* data:;",
-  "applications": {
-    "gecko": {
-      "id": "modern-bookmarks@example.com"
-    }
-  },
-  "web_accessible_resources": [
-    "assets/*",
-    "icons/*"
-  ]
+  "web_accessible_resources": [{
+    "resources": ["assets/*", "icons/*"],
+    "matches": ["<all_urls>"]
+  }],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' https://* data:;"
+  }
 }

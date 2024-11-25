@@ -1,7 +1,8 @@
-import {BookmarkItem} from "@components/BookmarkItem.jsx";
+import {BookmarkItem} from "@components/BookmarkItem/index.jsx";
 import {useState, useMemo, useEffect, useRef} from "react";
 import {ChevronRight, Folder, ChevronLeft, Search} from 'lucide-react';
 import {useBookmarks} from '@/App/context/BookmarksContext';
+import {useTheme} from "@/App/context/ThemeContext.jsx";
 
 const ROWS_TO_SHOW = 3;
 const FOLDER_WIDTH = 110;
@@ -33,6 +34,7 @@ export const BookmarkFolder = ({
                                    bookmarks,
                                    onUpdate
                                }) => {
+    const {colors, classes} = useTheme();
     const bookmarksAdapter = useBookmarks();
     const [currentPath, setCurrentPath] = useState([node]);
     const [currentPage, setCurrentPage] = useState(1);
@@ -194,14 +196,14 @@ export const BookmarkFolder = ({
                     <div key={folder.id} className="flex items-center">
                         <button
                             onClick={() => handleFolderClick(folder)}
-                            className={`text-sm hover:text-white transition-colors ${
-                                index === currentPath.length - 1 ? 'text-white font-medium' : 'text-gray-400'
+                            className={`text-sm hover:${classes.text} transition-colors ${
+                                index === currentPath.length - 1 ? classes.text + ' font-medium' : classes.textSecondary
                             }`}
                         >
-                            <h3 className="text-lg font-semibold text-white">{folder.title}</h3>
+                            <h3 className={`text-lg font-semibold ${classes.text}`}>{folder.title}</h3>
                         </button>
                         {index < currentPath.length - 1 && (
-                            <ChevronRight className="w-5 h-5 mt-1 ml-2 mr-2 text-gray-600 mx-1"/>
+                            <ChevronRight className={`w-5 h-5 mt-1 ml-2 mr-2 ${classes.textSecondary} mx-1`}/>
                         )}
                     </div>
                 ))}
@@ -219,12 +221,12 @@ export const BookmarkFolder = ({
                         <button
                             key={folder.id}
                             onClick={() => handleFolderClick(folder)}
-                            className="flex bg-[#42414D20] flex-col items-center group hover:bg-[#52525E] p-4 rounded-md transition-colors min-h-[112px]"
+                            className={`flex flex-col items-center group ${classes.surface} hover:bg-color1-light-2 p-3 rounded-md transition-colors min-h-[100px]`}
                         >
-                            <div className="w-20 rounded-md flex items-center justify-center mb-2">
-                                <Folder className="w-10 h-10 text-[#42414D] group-hover:text-purple-400"/>
+                            <div className="w-20 rounded-md flex items-center justify-center mb-1">
+                                <Folder className="w-8 h-8 text-text1 opacity-50"/>
                             </div>
-                            <span className="text-[13px] text-gray-300 text-center line-clamp-2">
+                            <span className={`text-[13px] ${classes.text} text-center line-clamp-2`}>
                                 {folder.title}
                             </span>
                         </button>
@@ -258,6 +260,7 @@ export const BookmarkFolder = ({
         );
     };
 
+
     const renderPagination = () => {
         if (totalPages <= 1) return null;
 
@@ -268,13 +271,13 @@ export const BookmarkFolder = ({
                     disabled={currentPage === 1}
                     className={`p-1 rounded-md transition-colors ${
                         currentPage === 1
-                            ? 'text-gray-600'
-                            : 'text-gray-400 hover:bg-[#42414D] hover:text-white'
+                            ? 'text-color4'
+                            : `${classes.textSecondary} hover:bg-color3 hover:${classes.text}`
                     }`}
                 >
                     <ChevronLeft className="w-4 h-4"/>
                 </button>
-                <span className="text-sm text-gray-400">
+                <span className={`text-sm ${classes.textSecondary}`}>
                     {currentPage}/{totalPages}
                 </span>
                 <button
@@ -282,8 +285,8 @@ export const BookmarkFolder = ({
                     disabled={currentPage === totalPages}
                     className={`p-1 rounded-md transition-colors ${
                         currentPage === totalPages
-                            ? 'text-gray-600'
-                            : 'text-gray-400 hover:bg-[#42414D] hover:text-white'
+                            ? 'text-color4'
+                            : `${classes.textSecondary} hover:bg-color3 hover:${classes.text}`
                     }`}
                 >
                     <ChevronRight className="w-4 h-4"/>
@@ -292,12 +295,12 @@ export const BookmarkFolder = ({
         );
     };
 
-    // JSX остается без изменений
+
     return (
         <div id={`folder-${node.id}`} className="w-full mt-12">
             <div className="flex items-center gap-2 mb-6">
                 <div className="p-1.5 bg-purple-500/10 rounded-md mr-3">
-                    <Folder className="w-5 h-5 text-purple-400"/>
+                    <Folder className="w-5 h-5 text-text1 opacity-50"/>
                 </div>
                 <div className="flex justify-between items-center flex-1">
                     <div className="flex items-center flex-1">
@@ -307,21 +310,21 @@ export const BookmarkFolder = ({
                 </div>
             </div>
 
-            <div className='flex w-full justify-start'>
-                <div className="relative mb-8">
+            <div className='w-full grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-4'>
+                <div className="relative w-full mb-8 col-span-3">
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder=""
-                        className="h-9 px-3 pl-9 bg-[#2B2A33] min-w-96 text-white placeholder-gray-400 focus:outline-none rounded-md border-none text-sm"
+                        className={`h-10 px-3 pl-9 ${classes.surface} w-full ${classes.text} placeholder-${classes.textSecondary} focus:outline-none rounded-md border-none text-sm`}
                     />
-                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"/>
+                    <Search className={`w-4 h-4 ${classes.textSecondary} absolute left-3 top-1/2 -translate-y-1/2`}/>
                 </div>
             </div>
 
             {searchQuery && (filteredFolders.length === 0 && filteredBookmarks.length === 0) ? (
-                <div className="text-gray-400 text-sm">
+                <div className={`${classes.textSecondary} text-sm`}>
                     Ничего не найдено по запросу "{searchQuery}"
                 </div>
             ) : (
@@ -330,7 +333,7 @@ export const BookmarkFolder = ({
                         <>
                             {renderFolders()}
                             {filteredBookmarks.length > 0 && (
-                                <div className="h-px bg-gray-700/50 mb-6"/>
+                                <div className="h-px bg-color4/50 mb-6"/>
                             )}
                         </>
                     )}
