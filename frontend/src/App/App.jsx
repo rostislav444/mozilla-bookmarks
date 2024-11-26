@@ -8,7 +8,7 @@ import {useAppMode, useBookmarksData} from "@/App/context/BookmarksContext";
 import UserProfile from "@components/UserProfile.jsx";
 import {useTheme} from "@/App/context/ThemeContext.jsx";
 import WeatherClockWidget from "@components/WeatherClock.jsx";
-import {Loader2} from "lucide-react";
+import {Loader2, Settings} from "lucide-react";
 
 function App() {
     const {colors, classes} = useTheme();
@@ -44,24 +44,13 @@ function App() {
     if (error) {
         return (
             <div className={`flex items-center justify-center min-h-screen ${classes.background}`}>
-            <div className="text-xl text-red-500">Ошибка загрузки закладок</div>
+                <div className="text-xl text-red-500">Ошибка загрузки закладок</div>
             </div>
         );
     }
 
     return (
         <div className={`min-h-screen ${classes.background}`}>
-            {/*<button*/}
-            {/*    onClick={() => setSidebarVisible(prev => !prev)}*/}
-            {/*    className={`fixed bottom-4 left-3 z-50 ${classes.surface} p-2 rounded-lg ${classes.surfaceHover} transition-colors`}*/}
-            {/*>*/}
-            {/*    {sidebarVisible ? (*/}
-            {/*        <Settings className={`w-5 h-5 ${classes.textSecondary}`}/>*/}
-            {/*    ) : (*/}
-            {/*        <Settings className={`w-5 h-5 ${classes.textSecondary}`}/>*/}
-            {/*    )}*/}
-            {/*</button>*/}
-
             <div
                 className={`fixed top-0 left-0 w-72 h-full ${classes.surface} ${classes.border} transition-transform duration-300 ${
                     sidebarVisible ? 'translate-x-0 overflow-y-auto' : '-translate-x-[calc(100%-2px)]'
@@ -84,34 +73,32 @@ function App() {
             <div className={`transition-all duration-300 ${sidebarVisible && 'pl-72'}`}>
                 <div className="p-8">
                     <div className="max-w-full mx-auto">
-                        <div className="flex items-center justify-between mb-8">
+                        <div className='flex justify-center mt-9 mb-16'>
                             <WeatherClockWidget/>
-                            {/*<div>*/}
-                            {/*    <button*/}
-                            {/*        onClick={() => setSidebarVisible(prev => !prev)}*/}
-                            {/*        className={`*/}
-                            {/*        z-50  p-2 rounded-lg  transition-colors*/}
-                            {/*        bg-color1 hover:bg-color2*/}
-                            {/*        `}*/}
-                            {/*    >*/}
-                            {/*        {sidebarVisible ? (*/}
-                            {/*            <Settings className={`w-5 h-5 ${classes.textSecondary}`}/>*/}
-                            {/*        ) : (*/}
-                            {/*            <Settings className={`w-5 h-5 ${classes.textSecondary}`}/>*/}
-                            {/*        )}*/}
-                            {/*    </button>*/}
-                            {/*</div>*/}
-                            <div className="flex items-center gap-4">
+                        </div>
+                        <div className="w-full grid grid-cols-2 grid-rows-[auto_1fr] gap-6 xl:grid-cols-[180px_1fr_180px] xl:grid-rows-1 xl:gap-20 xl:items-center">
+                            <div className="col-span-1 xl:col-auto">
+                                <button
+                                    onClick={() => setSidebarVisible(prev => !prev)}
+                                    className={`p-2 rounded-lg ${classes.surfaceHover} transition-colors`}
+                                >
+                                    {sidebarVisible ? (
+                                        <Settings className={`w-5 h-5 text-base`}/>
+                                    ) : (
+                                        <Settings className={`w-5 h-5 text-text1`}/>
+                                    )}
+                                </button>
+                            </div>
+                            <div className="col-span-2 row-start-2 flex w-full justify-center align-middle xl:col-auto xl:row-auto">
+                                {isExtension && (
+                                    <SearchBar/>
+                                )}
+                            </div>
+                            <div className="col-span-1 flex align-middle justify-end gap-4 xl:col-auto">
                                 <ServicesMenu/>
                                 <UserProfile/>
                             </div>
                         </div>
-
-                        {isExtension && (
-                            <div className='flex w-full justify-center align-middle'>
-                                <SearchBar/>
-                            </div>
-                        )}
 
                         <QuickLinks
                             favorites={favorites}
@@ -134,7 +121,8 @@ function App() {
                 </div>
             </div>
         </div>
-    );
+    )
+        ;
 }
 
 export default App;

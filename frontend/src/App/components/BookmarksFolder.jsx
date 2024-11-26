@@ -310,8 +310,8 @@ export const BookmarkFolder = ({
                 </div>
             </div>
 
-            <div className='w-full grid grid-cols-[repeat(auto-fill,minmax(118px,1fr))] gap-4'>
-                <div className="relative w-full mb-8 col-span-3">
+            <div className='w-full grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4'>
+                <div className="relative w-full mb-8 col-span-2">
                     <input
                         type="text"
                         value={searchQuery}

@@ -2,6 +2,7 @@ import React, {useEffect, useState, useRef} from "react";
 import {Edit, Folder, Link as LinkIcon, Plus, Star, Trash, X} from "lucide-react";
 import {ReactSortable} from "react-sortablejs";
 import {useTheme} from "@/App/context/ThemeContext.jsx";
+import {ServicesMenu} from "@components/Services/index.jsx";
 
 const WebsiteIcon = ({url}) => {
     const {classes} = useTheme();
@@ -18,7 +19,7 @@ const WebsiteIcon = ({url}) => {
     return (
         <div className="relative w-8 h-8 flex items-center justify-center bg-accent/10 rounded-lg overflow-hidden">
             {(!iconLoaded || iconError) && (
-                <LinkIcon className={`w-5 h-5 ${classes.textSecondary}`} />
+                <LinkIcon className={`w-5 h-5 ${classes.textSecondary}`}/>
             )}
             {!iconError && (
                 <img
@@ -51,9 +52,11 @@ const QuickLinkItem = ({link, onEdit, onDelete}) => {
     };
 
     return (
-        <div className={`relative group ${classes.surface} py-5 px-4 rounded-md hover:bg-color1-light-2 transition-all duration-300`}>
+        <div
+            className={`relative group ${classes.surface} py-5 px-4 rounded-md hover:bg-color1-light-2 transition-all duration-300`}>
             {/* Action buttons */}
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 flex gap-1.5">
+            <div
+                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 flex gap-1.5">
                 <button
                     onClick={(e) => {
                         e.preventDefault();
@@ -75,7 +78,7 @@ const QuickLinkItem = ({link, onEdit, onDelete}) => {
             </div>
 
             <a href={link.url} className="flex items-center space-x-4">
-                <WebsiteIcon url={link.url} />
+                <WebsiteIcon url={link.url}/>
                 <div className="flex-1 min-w-0 ml-1 pb-1.5">
                     <h4 className={`text-base ${classes.text} line-clamp-1 group-hover:text-accent transition-colors`}>
                         {link.title}
@@ -241,21 +244,24 @@ export const QuickLinks = ({favorites, updateFavorites}) => {
         <>
             <div className="w-full mt-12 mb-6">
                 <div className="flex items-center mb-6">
-                    <div className="flex w-full justify-between gap-2">
-                        <div className="flex">
-                            <div className="p-1.5 bg-yellow-500/10 rounded-md mr-3">
-                                <Star className="w-5 h-5 text-yellow-400"/>
+                    <div className="flex w-full justify-between align-middle gap-2">
+                        <div className="flex justify-start align-middle">
+                            <div className="flex align-middle">
+                                <div className="p-1.5 bg-yellow-500/10 rounded-md mr-3">
+                                    <Star className="w-5 h-5 text-yellow-400"/>
+                                </div>
+
+                                <h3 className={`text-lg ml-4 pt-0.5 font-semibold ${classes.text}`}>Быстрые ссылки</h3>
                             </div>
 
-                            <h3 className={`text-lg ml-4 font-semibold ${classes.text}`}>Быстрые ссылки</h3>
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="ml-4 p-1.5 bg-color3/50 rounded-md hover:bg-color1-light-2 transition-colors"
+                            >
+                                <Plus className={`w-5 h-5 ${classes.textSecondary}`}/>
+                            </button>
                         </div>
 
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="ml-2 p-1.5 bg-color3/50 rounded-md hover:bg-color1-light-2 transition-colors"
-                        >
-                            <Plus className={`w-5 h-5 ${classes.textSecondary}`}/>
-                        </button>
                     </div>
                 </div>
                 <ReactSortable

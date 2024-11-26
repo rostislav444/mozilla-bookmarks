@@ -106,13 +106,13 @@ export const SearchBar = () => {
     };
 
     return <>
-        <form ref={formRef} onSubmit={handleSearch} className="z-50 flex-1 max-w-4xl relative">
-            <div className="relative w-full grid grid-cols-5 gap-2">
+        <form ref={formRef} onSubmit={handleSearch} className="z-50 flex-1 w-full relative">
+            <div className="relative w-full grid grid-cols-1 xl:grid-cols-5 gap-y-2 xl:gap-x-2">
                 <div className="relative w-full">
                     <button
                         type="button"
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="h-12 w-full flex items-center gap-2 px-3 bg-color2 hover:bg-[#52525E] rounded-md mr-3
+                        className="h-10 w-full flex items-center gap-2 px-3 bg-color2 hover:bg-[#52525E] rounded-md
                             text-gray-300 whitespace-nowrap transition-colors"
                     >
                         <img
@@ -153,18 +153,18 @@ export const SearchBar = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Поиск в интернете..."
-                        className="flex-1 h-12 px-3 bg-color2 text-text1 placeholder-text1 focus:outline-none rounded-l-md border-none"
+                        className="flex-1 h-10 px-3 bg-color2 text-text1 placeholder-text1 focus:outline-none rounded-l-md border-none"
                     />
                     <button
                         type="button"
                         onClick={(e) => handleSearch(e, true)}
-                        className="h-12 px-3 bg-color2 hover:bg-[#52525E] text-gray-400 transition-colors border-l border-gray-700/50"
+                        className="h-10 px-3 bg-color2 hover:bg-[#52525E] text-gray-400 transition-colors border-l border-gray-700/50"
                     >
                         <ImageIcon className="w-4 h-4 text-text1"/>
                     </button>
                     <button
                         type="submit"
-                        className="h-12 px-3 bg-color2 hover:bg-[#52525E] rounded-r-lg text-gray-400 transition-colors"
+                        className="h-10 px-3 bg-color2 hover:bg-[#52525E] rounded-r-lg text-gray-400 transition-colors"
                     >
                         <Search className="w-4 h-4 text-text1"/>
                     </button>

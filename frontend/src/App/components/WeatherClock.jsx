@@ -115,15 +115,15 @@ const WeatherClockWidget = () => {
 
   const getWeatherIcon = (condition) => {
     const icons = {
-      clear: <Sun className="text-yellow-500 w-6 h-6" />,
-      night: <Moon className="text-gray-300 w-6 h-6" />,
-      clouds: <Cloud className="text-gray-500 w-6 h-6" />,
-      rain: <CloudRain className="text-blue-500 w-6 h-6" />,
-      snow: <CloudSnow className="text-blue-300 w-6 h-6" />,
-      thunderstorm: <CloudLightning className="text-purple-500 w-6 h-6" />,
-      drizzle: <CloudDrizzle className="text-blue-400 w-6 h-6" />,
-      mist: <Cloudy className="text-gray-400 w-6 h-6" />,
-      fog: <Cloudy className="text-gray-400 w-6 h-6" />
+      clear: <Sun className="text-yellow-500 w-10 h-10" />,
+      night: <Moon className="text-gray-300 w-10 h-10" />,
+      clouds: <Cloud className="text-gray-500 w-10 h-10" />,
+      rain: <CloudRain className="text-blue-500 w-10 h-10" />,
+      snow: <CloudSnow className="text-blue-300 w-10 h-10" />,
+      thunderstorm: <CloudLightning className="text-purple-500 w-10 h-10" />,
+      drizzle: <CloudDrizzle className="text-blue-400 w-10 h-10" />,
+      mist: <Cloudy className="text-gray-400 w-10 h-10" />,
+      fog: <Cloudy className="text-gray-400 w-10 h-10" />
     };
     return icons[condition] || icons.clear;
   };
@@ -141,7 +141,7 @@ const WeatherClockWidget = () => {
   };
 
   return (
-    <div className="w-64">
+    <div>
       <div className="flex justify-start align-middle">
         <div className="flex flex-col">
           <span className="text-base font-medium text-text1">
@@ -161,7 +161,7 @@ const WeatherClockWidget = () => {
           ) : (
             <>
               {getWeatherIcon(weather.condition)}
-              <span className='pl-1 text-text1'>{weather.temp !== null ? `${weather.temp}°C` : '--°C'}</span>
+              <span className='pl-2 text-text1'>{weather.temp !== null ? `${weather.temp}°C` : '--°C'}</span>
             </>
           )}
         </div>

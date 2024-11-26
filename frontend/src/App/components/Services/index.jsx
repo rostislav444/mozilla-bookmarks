@@ -87,10 +87,10 @@ export const ServicesMenu = () => {
     };
 
     return (
-        <div className="relative" ref={menuRef}>
+        <div className="relative flex align-middle" ref={menuRef}>
             <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`p-2 hover:bg-color3 rounded-md transition-colors`}
+                className={`p-1 hover:bg-color3 rounded-md transition-colors`}
             >
                 <div className='w-4 h-4 grid grid-cols-3 grid-rows-3 gap-0.5'>
                     {[...Array(9)].map((_, i) => (

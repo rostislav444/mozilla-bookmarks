@@ -119,13 +119,10 @@ const UserProfile = () => {
         <div className="relative">
             <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`p-2 rounded-full hover:bg-color3 transition-colors relative`}
+                className={`flex justify-end p-2 rounded-full hover:bg-color3 transition-colors relative`}
             >
-                <UserCircle className={`w-6 h-6 ${user ? 'text-green-400' : classes.textSecondary}`}/>
-                {user && (
-                    <span
-                        className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-color2"/>
-                )}
+                <span className='pr-6 text-text1'>{user?.firstName || 'Login'}</span>
+                <UserCircle className={`w-6 h-6 ${user ? 'text-green-400' : 'text-text1'}`}/>
             </button>
 
             {isMenuOpen && (
